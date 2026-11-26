@@ -66,6 +66,15 @@ html.lock,html.lock body{overflow:hidden}
 .btn{min-height:44px;padding:0 18px;border-radius:99px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px;justify-content:center}
 .btn.pri{background:var(--ac);color:var(--onac);border-color:var(--ac)}
 .wrap{overflow-x:auto;padding:18px max(5vw,16px) 32px}
+/* Barra para moverse de costado, siempre visible mientras se ve la malla (solo computadora) */
+.mapbox{position:relative}
+.hbar{display:none}
+@media(hover:hover) and (min-width:701px){
+ .wrap{scrollbar-width:none}.wrap::-webkit-scrollbar{display:none}
+ .hbar{display:block;position:sticky;bottom:0;z-index:9}
+ .hb-track{overflow-x:scroll;overflow-y:hidden}
+ #hbI{height:1px}
+}
 #mapa{position:relative;display:flex;gap:22px;width:max-content;min-width:100%;align-items:flex-start}
 #lines{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:2}
 .yg{display:flex;flex-direction:column;gap:10px;scroll-margin-left:16px}.yg>h3{font:700 13px Inter,sans-serif;color:var(--mut);padding:0 4px 6px;border-bottom:2px solid var(--line);display:flex;justify-content:space-between}.yg>div{display:flex;gap:14px;align-items:flex-start}
@@ -239,7 +248,8 @@ textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
   <div class="seg" id="filtros" role="group" aria-label="Filtrar materias"></div>
   <div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="buscar" type="search" placeholder="Buscar materia" aria-label="Buscar materia"></div>
 </section>
-<div class="wrap" id="wrap"><div id="mapa"><svg id="lines" aria-hidden="true"></svg></div></div>
+<div class="mapbox"><div class="wrap" id="wrap"><div id="mapa"><svg id="lines" aria-hidden="true"></svg></div></div>
+<div class="hbar" id="hbar"><div class="hb-track" id="hbT" aria-hidden="true"><div id="hbI"></div></div></div></div>
 
 <section class="band foot">
   <details><summary>Configuración</summary><div>
@@ -565,6 +575,19 @@ function goSem(n){ const c=$('#s'+n); if(!c) return; const w=$('#wrap'), pad=par
   w.scrollTo({left:target.offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); setActive(n); }
 let curSem=1;
 function setActive(n){ const ch=n!==curSem; curSem=n; const ys=$('#years'); document.querySelectorAll('.yr').forEach(b=>{ const on=b.dataset.sem==String(n); b.classList.toggle('on',on); if(on&&ch){ const l=b.offsetLeft-ys.offsetLeft, r=l+b.offsetWidth; if(l<ys.scrollLeft+16||r>ys.scrollLeft+ys.clientWidth-16) ys.scrollTo({left:l-40,behavior:'smooth'}); } }); }
+// Barra de abajo: copia el desplazamiento de la malla y al revés
+const hbT=$('#hbT'), hbI=$('#hbI'); let hbSet=-1, wSet=-1;
+// La barra de abajo es la barra normal del navegador (mismo color y grosor que la vertical) y copia el desplazamiento de la malla
+function hbSize(){ const w=$('#wrap'); if(!w||!hbT.clientWidth) return; const ratio=w.scrollWidth/Math.max(1,w.clientWidth);
+  hbI.style.width=Math.round(hbT.clientWidth*ratio)+'px'; $('#hbar').style.visibility=ratio>1.01?'visible':'hidden'; hbSync(); }
+function hbSync(){ const w=$('#wrap'), wm=w.scrollWidth-w.clientWidth, tm=hbT.scrollWidth-hbT.clientWidth;
+  if(wm<=0||tm<=0) return; const v=w.scrollLeft/wm*tm; if(Math.abs(hbT.scrollLeft-v)<1) return; hbSet=v; hbT.scrollLeft=v; }
+// Se ignoran los movimientos que puso el propio código, así uno no frena al otro
+hbT.addEventListener('scroll',()=>{ if(hbSet>=0&&Math.abs(hbT.scrollLeft-hbSet)<2){ hbSet=-1; return; }
+  const w=$('#wrap'), wm=w.scrollWidth-w.clientWidth, tm=hbT.scrollWidth-hbT.clientWidth; if(tm>0){ wSet=hbT.scrollLeft/tm*wm; w.scrollLeft=wSet; } },{passive:true});
+$('#wrap').addEventListener('scroll',()=>{ const w=$('#wrap'); if(wSet>=0&&Math.abs(w.scrollLeft-wSet)<2){ wSet=-1; return; } hbSync(); },{passive:true});
+new ResizeObserver(hbSize).observe($('#mapa')); new ResizeObserver(hbSize).observe($('#wrap'));
+
 let wT; $('#wrap').addEventListener('scroll',()=>{ cancelAnimationFrame(wT); wT=requestAnimationFrame(()=>{ const w=$('#wrap'), x=w.scrollLeft+24; let best=1;
   document.querySelectorAll('.col').forEach(c=>{ if(c.offsetLeft<=x) best=parseInt(c.dataset.s); }); setActive(best); }); },{passive:true});
 let bT; $('#buscar').addEventListener('input',e=>{ clearTimeout(bT); bT=setTimeout(()=>{ q=e.target.value; render(); },150); });
