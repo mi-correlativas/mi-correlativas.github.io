@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1d5cf0">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Correlativas">
+<title>Correlativas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: cercano y motivador, como un compañero que te ayuda a organizar la carrera.
+   IDEA: el recorrido de la carrera como un camino por años; cada materia se enciende cuando la habilitás.
+   PICTURE: portada con el color e ícono de tu carrera y un anillo de avance; debajo, la malla por años con líneas de correlatividad.
+   COLOUR and TYPE: blanco y tinta; manda el color de la carrera (naranja alimentos, azul electrónica, verde ambiental, frambuesa informática). Archivo + Inter.
+   LAYOUT: portada, franja "habilitadas para vos", barra de años, columnas redondeadas por año; ficha lateral y selector de nota flotante. */
+:root{color-scheme:light;--bg:#ffffff;--ink:#16181d;--mut:#5f6472;--line:#e4e6ec;--card:#ffffff;--soft:#f3f4f7;--onac:#ffffff;--ac:var(--acl,#1d5cf0);--acs:var(--acsl,rgba(29,92,240,.14));--sh:0 1px 2px rgba(15,20,40,.06),0 6px 18px rgba(15,20,40,.07)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){color-scheme:dark;--bg:#0f1117;--ink:#eceef3;--mut:#9ea3b0;--line:#2a2e3a;--card:#181b24;--soft:#151821;--onac:#0e1016;--ac:var(--acd,#7fa6ff);--acs:var(--acsd,rgba(127,166,255,.18))}}
+:root[data-theme=dark]{color-scheme:dark;--bg:#0f1117;--ink:#eceef3;--mut:#9ea3b0;--line:#2a2e3a;--card:#181b24;--soft:#151821;--onac:#0e1016;--ac:var(--acd,#7fa6ff);--acs:var(--acsd,rgba(127,166,255,.18))}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,[role=button],a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+*{box-sizing:border-box;min-width:0}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:hidden;overflow-x:clip}
+h1,h2,h3{font-family:Archivo,Inter,sans-serif;line-height:1.08;margin:0;text-wrap:balance}
+button,input,select,textarea{font:inherit;color:inherit}
+svg.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
+.band{padding:clamp(20px,3vw,40px) max(5vw,16px,env(safe-area-inset-right))}
+.hero{padding-top:max(clamp(28px,4vw,52px),calc(env(safe-area-inset-top) + 16px))!important}
+.years{padding-left:max(5vw,16px,env(safe-area-inset-left))}
+html.lock,html.lock body{overflow:hidden}
+.hero{position:relative;overflow:hidden;background:var(--ac);color:var(--onac);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 40px;align-items:center;padding-block:clamp(28px,4vw,52px)}
+.hero .bgic{position:absolute;right:-30px;top:-40px;width:300px;height:300px;opacity:.13;stroke-width:1.2}
+.tag{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.2);padding:6px 12px;border-radius:99px;font-weight:600;font-size:14px}
+:root[data-theme=dark] .tag{background:rgba(0,0,0,.18)}
+.hero h1{font-size:clamp(30px,5vw,50px);font-weight:800;margin:14px 0 8px;position:relative}
+.hero p{margin:0;font-size:17px;position:relative}
+.hero .acts{margin-top:18px;position:relative}
+.ghost{min-height:44px;padding:0 16px;border-radius:99px;border:1.5px solid currentColor;background:transparent;cursor:pointer;font-weight:600;font-size:15px}
+.ring{position:relative;display:flex;gap:26px;align-items:center}
+.ring svg{width:150px;height:150px}
+.ring .pct{position:absolute;left:0;width:150px;top:50%;transform:translateY(-50%);text-align:center;font:800 36px/1 Archivo,sans-serif}
+.ring .pct small{display:block;font:500 13px Inter,sans-serif;margin-top:4px;opacity:.85}
+.prom{font:800 clamp(36px,5vw,52px)/1 Archivo,sans-serif}
+.prom small{font-size:16px;font-weight:500;opacity:.85}
+#promH{font-size:14px;opacity:.88;max-width:180px;display:block;margin-top:4px}
+#sync{position:relative;font-size:13px;opacity:.85;margin-top:12px}
+.now{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding-block:18px;border-bottom:1px solid var(--line)}
+.now h3{font-size:17px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--ac);background:var(--acs);color:var(--ink);font-weight:600;font-size:14px;min-height:38px;padding:0 13px;border-radius:99px;cursor:pointer}
+.chip:hover{background:var(--ac);color:var(--onac)}
+.years{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:stretch;overflow-x:auto;padding:16px max(5vw,16px);scrollbar-width:thin}
+.ysep{flex:none;width:1px;background:var(--line);margin:4px 4px}.yr{flex:none;min-width:112px;min-height:56px;border:1px solid var(--line);background:var(--card);border-radius:14px;padding:8px 14px;text-align:start;cursor:pointer;box-shadow:var(--sh)}
+.yr.on{border-color:var(--ac);box-shadow:0 0 0 3px var(--acs)}.yr b{display:block;font-size:15px}.yr span{font-size:13px;color:var(--mut)}
+.mini{height:6px;border-radius:3px;background:var(--soft);margin-top:6px;overflow:hidden}.mini i{display:block;height:100%;background:var(--ac);border-radius:3px;transition:width .5s}
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;padding-block:4px 0}
+.seg{display:flex;flex-wrap:wrap;gap:6px;background:var(--soft);padding:4px;border-radius:99px}
+.seg button{border:0;background:none;min-height:40px;padding:0 14px;border-radius:99px;cursor:pointer;font-weight:600;font-size:14px;color:var(--mut)}
+.seg button.on{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+.search{position:relative;width:min(300px,100%)}
+.search input{padding-left:40px;border-radius:99px}
+.search svg{position:absolute;left:13px;top:12px;color:var(--mut)}
+.btn{min-height:44px;padding:0 18px;border-radius:99px;border:1px solid var(--line);background:var(--card);cursor:pointer;font-weight:600;font-size:15px;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn.pri{background:var(--ac);color:var(--onac);border-color:var(--ac)}
+.wrap{overflow-x:auto;padding:18px max(5vw,16px) 32px}
+#mapa{position:relative;display:flex;gap:22px;width:max-content;min-width:100%;align-items:flex-start}
+#lines{position:absolute;inset:0;pointer-events:none;overflow:visible;z-index:2}
+.yg{display:flex;flex-direction:column;gap:10px;scroll-margin-left:16px}.yg>h3{font:700 13px Inter,sans-serif;color:var(--mut);padding:0 4px 6px;border-bottom:2px solid var(--line);display:flex;justify-content:space-between}.yg>div{display:flex;gap:14px;align-items:flex-start}
+.col{width:262px;scroll-margin-left:16px;background:var(--soft);border-radius:20px;padding:16px 14px;display:flex;flex-direction:column;gap:10px;position:relative;scroll-margin-left:16px}
+.col header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.col h2{font-size:22px}.yl{display:none;font-size:13px;color:var(--mut);font-weight:600}.nav2{display:none;gap:6px}.nav2 button{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--card);font-size:20px;line-height:1;cursor:pointer;color:var(--ink)}.nav2 button:disabled{opacity:.3;cursor:default}
+#veil{position:fixed;inset:0;background:rgba(10,12,20,.4);z-index:19;display:none}.col header span{font-size:13px;color:var(--mut);font-weight:600}
+.per{font-size:12px;font-weight:700;color:var(--mut);margin:6px 2px 0}
+.card{position:relative;z-index:1;display:flex;gap:10px;align-items:center;padding:10px 10px 10px 11px;border-radius:14px;border:1.5px solid transparent;background:var(--card);box-shadow:var(--sh);cursor:pointer;transition:transform .18s,opacity .2s,box-shadow .2s}
+@media(hover:hover){.card:hover{transform:translateY(-2px)}.car:hover{transform:translateY(-3px)}}
+.card .st{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--soft);color:var(--mut)}
+.card .st svg{width:16px;height:16px}
+.card .tx{flex:1}
+.card b{display:block;font-weight:600;font-size:14.5px;line-height:1.3}
+.card em{display:block;font-style:normal;font-size:12.5px;color:var(--mut);margin-top:2px}
+.nota{font:800 22px/1 Archivo,sans-serif;color:var(--ac);padding-inline:4px}
+.q{border:0;min-height:36px;padding:0 11px;border-radius:99px;background:var(--ac);color:var(--onac);font-weight:700;font-size:13px;cursor:pointer;white-space:nowrap;flex:none}
+.s-aprobada .st{background:var(--ac);color:var(--onac)}
+.s-disponible,.s-rendir{border-color:var(--ac);box-shadow:0 0 0 4px var(--acs),var(--sh)}
+.s-disponible .st,.s-rendir .st{background:var(--acs);color:var(--ac)}
+.s-disponible em,.s-rendir em{color:var(--ac);font-weight:600}
+.s-cursando{border:1.5px dashed var(--ac)}
+.s-cursando .st{color:var(--ac)}
+.s-bloqueada{background:transparent;box-shadow:none;border:1.5px dashed var(--line)}
+.s-bloqueada b{color:var(--mut)}
+.card.dim{opacity:.18}
+.card.sel{outline:3px solid var(--ink);outline-offset:2px}
+.card.rel{transform:translateX(4px)}
+.card.just{animation:pop 1s ease}
+@keyframes pop{0%,100%{transform:none}35%{transform:scale(1.07)}}
+.foot{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));gap:16px;border-top:1px solid var(--line)}
+details{border:1px solid var(--line);border-radius:16px;padding:0 16px;background:var(--card)}
+summary{cursor:pointer;font-weight:600;min-height:52px;display:flex;align-items:center}
+details>div{padding-bottom:16px;display:grid;gap:10px}
+label{font-size:14px;font-weight:600;display:grid;gap:4px}
+input,select,textarea{font-size:16px;min-height:44px;padding:8px 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);width:100%}
+textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
+.hint{font-size:13px;color:var(--mut);margin:0}
+.acts{display:flex;flex-wrap:wrap;gap:8px}
+
+/* Acceso */
+[hidden]{display:none!important}
+#login{position:fixed;inset:0;z-index:45;background:var(--bg);overflow-y:auto;display:none;-webkit-overflow-scrolling:touch}
+#login.open{display:block}
+.lg{min-height:100%;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+.lg-txt{padding:max(40px,calc(env(safe-area-inset-top) + 24px)) max(5vw,24px) 40px;display:flex;flex-direction:column;justify-content:center;gap:20px;max-width:640px;width:100%;justify-self:center}
+.brand{display:flex;align-items:center;gap:12px;font:800 24px/1 Archivo,sans-serif;letter-spacing:-.01em}
+.brand svg{width:44px;height:44px;flex:none}
+.lg h1{font-size:clamp(30px,3.1vw,42px);font-weight:800;line-height:1.06;text-wrap:wrap}
+.lg-lead{font-size:18px;color:var(--mut);margin:0;max-width:34em}
+.gbtn{display:inline-flex;align-items:center;gap:14px;min-height:56px;padding:0 26px 0 9px;border-radius:99px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;font-size:16.5px;box-shadow:var(--sh);cursor:pointer;align-self:flex-start;transition:transform .15s,box-shadow .15s}
+.gbtn .gi{width:40px;height:40px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.gbtn .gi svg{width:20px;height:20px}
+.gbtn[disabled]{opacity:.6;cursor:wait}
+@media(hover:hover){.gbtn:hover{transform:translateY(-2px);box-shadow:0 2px 4px rgba(15,20,40,.08),0 12px 28px rgba(15,20,40,.12)}}
+.lg-note{font-size:14px;color:var(--mut);margin:0;max-width:30em}
+.lg-alt{border-radius:16px;background:var(--soft);padding:16px 18px;display:grid;gap:12px;max-width:30em}
+.lg-alt p{margin:0;font-size:15px}
+.lg-err{color:#c62828;font-size:14px;margin:0}
+.feats{display:flex;flex-wrap:wrap;gap:8px 18px;list-style:none;padding:0;margin:4px 0 0;font-size:14px;color:var(--mut)}
+.feats li{display:flex;gap:8px;align-items:center}.feats li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--k)}
+.lg-art{position:relative;background:#121521;display:grid;place-items:center;padding:40px 28px;overflow:hidden}
+.lg-art svg{width:min(100%,560px);height:auto}
+.lg-art .nd{opacity:0;animation:rise .6s ease forwards}
+.lg-art .ln{stroke-dasharray:400;stroke-dashoffset:400;animation:draw 1s ease forwards}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media(prefers-reduced-motion:reduce){.lg-art .nd,.lg-art .ln{animation:none;opacity:1;stroke-dashoffset:0}.gbtn{transition:none}}
+.who{font-size:14px;opacity:.9;margin-left:4px}
+@media(max-width:760px){.lg{grid-template-columns:1fr;grid-template-rows:auto 1fr}.lg-art{order:-1;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) 16px 16px;max-height:300px}.lg-art svg{max-height:260px;width:auto;max-width:100%}.lg-txt{padding:24px 20px calc(32px + env(safe-area-inset-bottom));justify-content:flex-start;gap:16px}.lg-lead{font-size:16px}.gbtn{align-self:stretch;justify-content:center;padding:0 22px 0 9px}}
+/* Bienvenida */
+#onb{position:fixed;inset:0;padding-top:max(24px,env(safe-area-inset-top))!important;z-index:40;background:var(--bg);overflow-y:auto;display:none;padding:clamp(24px,5vw,64px) max(5vw,16px)}
+#onb.open{display:block}
+#onb .in{max-width:980px;margin:0 auto}
+#onb h1{font-size:clamp(32px,5vw,48px);margin-bottom:10px}
+#onb h2{font-size:22px;margin:30px 0 12px}
+.cars{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px;margin-top:22px}
+.car{text-align:start;border:2px solid var(--line);background:var(--card);border-radius:20px;padding:20px 18px;cursor:pointer;display:grid;gap:10px;align-content:start;min-height:200px;transition:transform .18s;box-shadow:var(--sh)}
+
+.car .ic{width:52px;height:52px;border-radius:16px;display:grid;place-items:center;background:var(--k);color:#fff}
+.car .ic svg{width:28px;height:28px}
+.car b{font:700 19px/1.2 Archivo,sans-serif}
+.car span{font-size:14px;color:var(--mut)}
+.car[aria-pressed=true]{border-color:var(--k);box-shadow:0 0 0 4px var(--kk)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pills label{display:block}
+.pills input{position:absolute;opacity:0;width:1px;height:1px}
+.pills span{display:flex;align-items:center;min-height:44px;padding:0 16px;border:1.5px solid var(--line);border-radius:99px;font-weight:600;cursor:pointer;font-size:15px;background:var(--card)}
+.pills input:checked+span{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.pills input:focus-visible+span{outline:3px solid var(--ac)}
+/* Ficha */
+#ficha{position:fixed;top:0;padding-top:max(22px,env(safe-area-inset-top));-webkit-overflow-scrolling:touch;overscroll-behavior:contain;right:0;bottom:0;width:min(440px,100%);background:var(--bg);border-left:1px solid var(--line);box-shadow:-12px 0 40px rgba(0,0,0,.15);transform:translateX(105%);transition:transform .25s;z-index:20;overflow-y:auto;padding:22px 22px 40px;display:grid;gap:18px;align-content:start}
+#ficha.open{transform:none!important}
+.fhead{display:flex;justify-content:space-between;align-items:start;gap:10px}
+.fhead h2{font-size:26px}
+.x{width:44px;padding:0;font-size:22px;flex:none}
+.box{border-radius:14px;background:var(--soft);padding:14px 16px;display:grid;gap:8px}
+.box h3{font:700 15px Inter,sans-serif}
+.rq{display:flex;gap:10px;align-items:center;border:0;background:none;padding:4px 0;text-align:start;cursor:pointer;font-size:15px}
+.rq .st{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:none;background:var(--card);color:var(--mut)}
+.rq .st svg{width:14px;height:14px}
+.rq.ok .st{background:var(--ac);color:var(--onac)}
+.rq:hover span:last-child{text-decoration:underline}
+.estado{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.estado button{min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);font-weight:600;cursor:pointer;font-size:14px}
+.estado button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.notas{display:grid;grid-template-columns:repeat(auto-fill,minmax(46px,1fr));gap:6px}
+.notas button{min-height:46px;border-radius:12px;border:1.5px solid var(--line);background:var(--soft);font:800 18px Archivo,sans-serif;cursor:pointer}
+.notas button:hover,.notas button[aria-pressed=true]{background:var(--ac);color:var(--onac);border-color:var(--ac)}
+.notas .sn{grid-column:span 2;font:600 14px Inter,sans-serif}
+/* Selector rápido */
+#pick{position:fixed;z-index:30;width:min(320px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 18px 50px rgba(0,0,0,.22);padding:16px;display:none;gap:12px}
+#pick.open{display:grid}
+#pick h3{font-size:18px}
+#toast{position:fixed;left:50%;bottom:20px;transform:translate(-50%,calc(100% + 48px));visibility:hidden;background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:16px;display:flex;gap:14px;align-items:center;max-width:min(580px,92vw);z-index:50;transition:transform .25s,visibility .25s;font-size:15px}
+#toast.show{transform:translate(-50%,0);visibility:visible}
+#toast button{background:none;border:0;color:inherit;text-decoration:underline;font-weight:700;cursor:pointer;min-height:36px;flex:none}
+#conf{position:fixed;inset:0;pointer-events:none;z-index:60;width:100%;height:100%}
+@media(prefers-reduced-motion:reduce){.card,.car,#ficha,#toast,.mini i{transition:none}.card.just{animation:none}}
+@media(max-width:1100px){#veil.on{display:block}}
+@media(min-width:701px) and (max-width:1100px){.wrap{scroll-snap-type:x mandatory;scroll-padding-inline:max(5vw,16px)}.yg{scroll-snap-align:start}#mapa{gap:18px}.col{width:calc((100vw - 2*max(5vw,16px) - 14px)/2)}}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding-block:26px 24px}.hero .bgic{width:190px;height:190px;right:-50px;top:-30px}.ring{gap:20px}.ring svg{width:104px;height:104px}.ring .pct{width:104px;font-size:26px}.ring .pct small{font-size:11px}.prom{font-size:36px}}
+@media(max-width:700px){
+ .band{padding-inline:16px}
+ .hero h1{font-size:30px;margin-top:12px}.hero p{font-size:15px}.tag{font-size:13px}
+ .now{flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:10px;padding-block:14px}
+ .now .chips{flex-wrap:nowrap;overflow-x:auto;margin-inline:-16px;padding:2px 16px 6px;scrollbar-width:none}.chip{flex:none}
+ .years{padding:10px 16px;gap:6px;scrollbar-width:none}.yr{min-width:0;padding:6px 12px;min-height:50px;border-radius:12px}.yr b{font-size:14px}.yr span{font-size:12px}.ysep{margin:6px 2px}
+ .tools{flex-direction:column;flex-wrap:nowrap;align-items:stretch;padding-top:14px}
+ .seg{flex-wrap:nowrap;overflow-x:auto;border-radius:14px;scrollbar-width:none}.seg button{flex:none}
+ .search{width:100%}
+ .wrap{scroll-snap-type:x mandatory;padding:14px 16px 28px;scroll-padding-inline:16px;scrollbar-width:none}
+ .yg,.yg>div{display:contents}.yg>h3{display:none}
+ #mapa{gap:12px}
+ .col{width:calc(100vw - 32px);scroll-snap-align:start;scroll-snap-stop:always;padding:14px 12px;border-radius:18px}
+ .col header{align-items:center}.yl,.nav2{display:flex}.col header .cnt{display:none}
+ .card{padding:12px 10px 12px 11px}.card b{font-size:15.5px}
+ .foot{padding-block:24px}
+ #ficha{top:auto;left:0;right:0;width:100%;max-height:90dvh;max-height:90vh;border-left:0;border-radius:22px 22px 0 0;transform:translateY(105%);box-shadow:0 -12px 40px rgba(0,0,0,.2);padding:12px 18px calc(28px + env(safe-area-inset-bottom))}
+ #ficha::before{content:"";justify-self:center;width:44px;height:5px;border-radius:3px;background:var(--line)}
+ .fhead h2{font-size:23px}
+ #toast{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));max-width:none;transform:translateY(calc(100% + 48px))}#toast.show{transform:none}
+ #pick{left:12px!important;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));top:auto!important;width:auto}
+ #onb{padding:28px 16px 40px}#onb h1{font-size:30px}
+ .cars{gap:10px}.car{grid-template-columns:52px 1fr;column-gap:14px;row-gap:2px;min-height:0;align-items:center;padding:14px}
+ .car .ic{grid-row:span 2}.car b{font-size:17px}
+ #empezar{width:100%}
+}
+@media(max-width:380px){.col{padding:12px 10px}.q{padding:0 9px}}
+</style>
+</head>
+<body>
+<header class="band hero">
+  <svg class="i bgic" viewBox="0 0 24 24" id="bgic"></svg>
+  <div>
+    <span class="tag" id="tag">Plan de estudios</span>
+    <h1 id="titulo">Mi plan de estudios</h1>
+    <p id="faltan">Cargando…</p>
+    <div class="acts" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center"><button class="ghost" type="button" id="cambiar" hidden>Cambiar carrera</button><button class="ghost" type="button" id="salir" hidden>Cerrar sesión</button><span class="who" id="who"></span></div>
+    <div id="sync"></div>
+  </div>
+  <div class="ring">
+    <div style="position:relative"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="12"/><circle id="arc" cx="60" cy="60" r="50" fill="none" stroke="currentColor" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 400" transform="rotate(-90 60 60)" style="transition:stroke-dasharray .8s"/></svg><div class="pct" id="pct">0%<small>aprobado</small></div></div>
+    <div><div class="prom" id="prom">–</div><span id="promH">Promedio</span></div>
+  </div>
+</header>
+<section class="band now" id="now" hidden></section>
+<nav class="years" id="years" aria-label="Semestres de la carrera"></nav>
+<section class="band tools">
+  <div class="seg" id="filtros" role="group" aria-label="Filtrar materias"></div>
+  <div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="buscar" type="search" placeholder="Buscar materia" aria-label="Buscar materia"></div>
+</section>
+<div class="wrap" id="wrap"><div id="mapa"><svg id="lines" aria-hidden="true"></svg></div></div>
+
+<section class="band foot">
+  <details><summary>Configuración</summary><div>
+    <label>Escala de notas<select id="cfEscala"></select></label>
+    <p class="hint">La nota es opcional: si no la cargás, la materia cuenta como aprobada pero no entra en el promedio.</p>
+    <button class="btn" type="button" id="cambiar2">Cambiar de carrera</button>
+  </div></details>
+  <details><summary>Sobre la malla</summary><div>
+    <p class="hint" id="mallaInfo"></p>
+    <p class="hint">Las correlativas son las que se piden para la evaluación final: tener aprobadas esas materias. Las del 1.er semestre solo piden el CPI (curso de ingreso).</p>
+  </div></details>
+  <details id="bk"><summary>Copia de seguridad</summary><div>
+    <p class="hint">Copiá este texto para guardarlo aparte, o pegá una copia anterior y tocá Restaurar.</p>
+    <textarea id="bkTxt" spellcheck="false"></textarea>
+    <div class="acts"><button class="btn" id="bkCopy" type="button">Copiar</button><button class="btn" id="bkLoad" type="button">Restaurar</button></div>
+  </div></details>
+</section>
+
+<div id="login" role="dialog" aria-modal="true" aria-labelledby="lgT"><div class="lg">
+  <div class="lg-txt">
+    <div class="brand"><svg viewBox='0 0 44 44' aria-hidden='true'><rect width='44' height='44' rx='12' fill='#121521'/><path d='M13 15c8 0 8 14 18 14' fill='none' stroke='#8a93a8' stroke-width='2'/><path d='M13 29c8 0 8-14 18-14' fill='none' stroke='#8a93a8' stroke-width='2'/><circle cx='12' cy='15' r='5' fill='#ff9a5c'/><circle cx='12' cy='29' r='5' fill='#5fd394'/><circle cx='32' cy='15' r='5' fill='#7fa6ff'/><circle cx='32' cy='29' r='5' fill='#ff7ea8'/></svg><span>Correlativas</span></div>
+    <h1 id="lgT">Tu carrera,<br>materia por materia.</h1>
+    <p class="lg-lead">Marcá lo que aprobaste y mirá al instante tu promedio, tu avance y qué materias se te habilitan.</p>
+    <ul class="feats"><li style="--k:#d9561a">Alimentos</li><li style="--k:#1d5cf0">Electrónica</li><li style="--k:#13824a">Ambiental</li><li style="--k:#c22a5f">Informática Empresarial</li></ul>
+    <button type="button" class="gbtn" id="gBtn"><span class="gi"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span><span id="gTxt">Continuar con Google</span></button>
+    <p class="lg-note">Usamos tu cuenta de Gmail solo para guardar tu avance. Entrás desde cualquier celular o computadora y lo encontrás tal como lo dejaste.</p>
+    <p class="lg-err" id="lgErr" hidden></p>
+    <div class="lg-alt" id="lgAlt" hidden>
+      <p id="lgAltTxt">El acceso con Google funciona en la versión publicada. Mientras tanto podés entrar así:</p>
+      <button type="button" class="btn pri" id="lgEnter">Entrar</button>
+    </div>
+  </div>
+  <div class="lg-art" aria-hidden="false"><svg viewBox='0 0 560 470' role='img' aria-label='Ejemplo de una malla con materias aprobadas, habilitadas y bloqueadas'><text x='90.0' y='118' text-anchor='middle' font-family='Inter,sans-serif' font-size='12' font-weight='600' fill='#8a93a8'>Semestre 1</text><text x='220.0' y='118' text-anchor='middle' font-family='Inter,sans-serif' font-size='12' font-weight='600' fill='#8a93a8'>Semestre 2</text><text x='350.0' y='118' text-anchor='middle' font-family='Inter,sans-serif' font-size='12' font-weight='600' fill='#8a93a8'>Semestre 3</text><text x='480.0' y='118' text-anchor='middle' font-family='Inter,sans-serif' font-size='12' font-weight='600' fill='#8a93a8'>Semestre 4</text><path class='ln' style='animation-delay:0.50s' d='M150 176.0C155.0 176.0 155.0 176.0 160 176.0' fill='none' stroke='#7fa6ff' stroke-opacity='0.9' stroke-width='2'/><path class='ln' style='animation-delay:0.58s' d='M150 272.0C155.0 272.0 155.0 272.0 160 272.0' fill='none' stroke='#ff9a5c' stroke-opacity='0.9' stroke-width='2'/><path class='ln' style='animation-delay:0.66s' d='M280 272.0C285.0 272.0 285.0 272.0 290 272.0' fill='none' stroke='#ff9a5c' stroke-opacity='0.9' stroke-width='2'/><path class='ln' style='animation-delay:0.74s' d='M280 368.0C285.0 368.0 285.0 368.0 290 368.0' fill='none' stroke='#ff7ea8' stroke-opacity='0.9' stroke-width='2'/><path class='ln' style='animation-delay:0.82s' d='M410 368.0C415.0 368.0 415.0 368.0 420 368.0' fill='none' stroke='#ff7ea8' stroke-opacity='0.35' stroke-width='2'/><path class='ln' style='animation-delay:0.90s' d='M280 176.0C285.0 176.0 285.0 176.0 290 176.0' fill='none' stroke='#7fa6ff' stroke-opacity='0.35' stroke-width='2'/><path class='ln' style='animation-delay:0.98s' d='M410 176.0C415.0 176.0 415.0 176.0 420 176.0' fill='none' stroke='#7fa6ff' stroke-opacity='0.35' stroke-width='2'/><g class='nd' style='animation-delay:0.10s'><rect x='30' y='150' width='120' height='52' rx='12' fill='#7fa6ff'/><circle cx='46' cy='176.0' r='7' fill='#121521' fill-opacity='.18'/><path d='M42.5 176.0l2.5 2.5 5-5.5' fill='none' stroke='#121521' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><text x='60' y='180.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#121521'>Cálculo I</text></g><g class='nd' style='animation-delay:0.15s'><rect x='30' y='246' width='120' height='52' rx='12' fill='#ff9a5c'/><circle cx='46' cy='272.0' r='7' fill='#121521' fill-opacity='.18'/><path d='M42.5 272.0l2.5 2.5 5-5.5' fill='none' stroke='#121521' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><text x='60' y='276.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#121521'>Química I</text></g><g class='nd' style='animation-delay:0.20s'><rect x='30' y='342' width='120' height='52' rx='12' fill='#5fd394'/><circle cx='46' cy='368.0' r='7' fill='#121521' fill-opacity='.18'/><path d='M42.5 368.0l2.5 2.5 5-5.5' fill='none' stroke='#121521' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><text x='60' y='372.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#121521'>Castellano</text></g><g class='nd' style='animation-delay:0.25s'><rect x='156' y='146' width='128' height='60' rx='15' fill='#7fa6ff' fill-opacity='.16'/><rect x='160' y='150' width='120' height='52' rx='12' fill='#1b2030' stroke='#7fa6ff' stroke-width='2'/><path d='M173 171.0l8 5-8 5z' fill='#7fa6ff'/><text x='190' y='180.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#eef1f7'>Cálculo II</text></g><g class='nd' style='animation-delay:0.30s'><rect x='160' y='246' width='120' height='52' rx='12' fill='#ff9a5c'/><circle cx='176' cy='272.0' r='7' fill='#121521' fill-opacity='.18'/><path d='M172.5 272.0l2.5 2.5 5-5.5' fill='none' stroke='#121521' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><text x='190' y='276.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#121521'>Química II</text></g><g class='nd' style='animation-delay:0.35s'><rect x='160' y='342' width='120' height='52' rx='12' fill='#ff7ea8'/><circle cx='176' cy='368.0' r='7' fill='#121521' fill-opacity='.18'/><path d='M172.5 368.0l2.5 2.5 5-5.5' fill='none' stroke='#121521' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><text x='190' y='372.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#121521'>Programación I</text></g><g class='nd' style='animation-delay:0.40s'><rect x='290' y='150' width='120' height='52' rx='12' fill='none' stroke='#3a4152' stroke-dasharray='4 4' stroke-width='1.5'/><rect x='301' y='174.0' width='10' height='8' rx='2' fill='none' stroke='#7d8598' stroke-width='1.5'/><path d='M303 174.0v-2a3 3 0 0 1 6 0v2' fill='none' stroke='#7d8598' stroke-width='1.5'/><text x='320' y='180.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#7d8598'>Física III</text></g><g class='nd' style='animation-delay:0.45s'><rect x='286' y='242' width='128' height='60' rx='15' fill='#ff9a5c' fill-opacity='.16'/><rect x='290' y='246' width='120' height='52' rx='12' fill='#1b2030' stroke='#ff9a5c' stroke-width='2'/><path d='M303 267.0l8 5-8 5z' fill='#ff9a5c'/><text x='320' y='276.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#eef1f7'>Fisicoquímica I</text></g><g class='nd' style='animation-delay:0.50s'><rect x='286' y='338' width='128' height='60' rx='15' fill='#ff7ea8' fill-opacity='.16'/><rect x='290' y='342' width='120' height='52' rx='12' fill='#1b2030' stroke='#ff7ea8' stroke-width='2'/><path d='M303 363.0l8 5-8 5z' fill='#ff7ea8'/><text x='320' y='372.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#eef1f7'>Programación II</text></g><g class='nd' style='animation-delay:0.55s'><rect x='420' y='150' width='120' height='52' rx='12' fill='none' stroke='#3a4152' stroke-dasharray='4 4' stroke-width='1.5'/><rect x='431' y='174.0' width='10' height='8' rx='2' fill='none' stroke='#7d8598' stroke-width='1.5'/><path d='M433 174.0v-2a3 3 0 0 1 6 0v2' fill='none' stroke='#7d8598' stroke-width='1.5'/><text x='450' y='180.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#7d8598'>Electrónica I</text></g><g class='nd' style='animation-delay:0.60s'><rect x='420' y='246' width='120' height='52' rx='12' fill='none' stroke='#3a4152' stroke-dasharray='4 4' stroke-width='1.5'/><rect x='431' y='270.0' width='10' height='8' rx='2' fill='none' stroke='#7d8598' stroke-width='1.5'/><path d='M433 270.0v-2a3 3 0 0 1 6 0v2' fill='none' stroke='#7d8598' stroke-width='1.5'/><text x='450' y='276.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#7d8598'>Ecología I</text></g><g class='nd' style='animation-delay:0.65s'><rect x='420' y='342' width='120' height='52' rx='12' fill='none' stroke='#3a4152' stroke-dasharray='4 4' stroke-width='1.5'/><rect x='431' y='366.0' width='10' height='8' rx='2' fill='none' stroke='#7d8598' stroke-width='1.5'/><path d='M433 366.0v-2a3 3 0 0 1 6 0v2' fill='none' stroke='#7d8598' stroke-width='1.5'/><text x='450' y='372.0' font-family='Inter,sans-serif' font-size='11.5' font-weight='600' fill='#7d8598'>Base de Datos</text></g><g font-family='Inter,sans-serif' font-size='12' fill='#a7aec0'><rect x='30' y='445' width='12' height='12' rx='3' fill='#7fa6ff'/><text x='48' y='455'>Aprobada</text><rect x='140' y='445' width='12' height='12' rx='3' fill='#1b2030' stroke='#7fa6ff' stroke-width='2'/><text x='158' y='455'>Habilitada</text><rect x='256' y='445' width='12' height='12' rx='3' fill='none' stroke='#5a6274' stroke-dasharray='3 2'/><text x='274' y='455'>Falta correlativa</text></g></svg></div>
+</div></div>
+
+<div id="onb" role="dialog" aria-modal="true" aria-labelledby="onbT"><div class="in">
+  <h1 id="onbT">¡Hola! ¿Qué carrera estudiás?</h1>
+  <p class="hint" style="font-size:16px">Ya tenemos cargadas todas las materias y correlativas de tu carrera. Solo vas marcando lo que aprobaste. Si cambiás de carrera, lo de cada una queda guardado por separado.</p>
+  <div class="cars" id="cars"></div>
+  <h2>¿Con qué escala te ponen las notas?</h2>
+  <div class="pills" id="escalas"></div>
+  <div class="acts" style="margin-top:28px"><button class="btn pri" id="empezar" type="button" style="min-height:52px;padding:0 26px;font-size:17px">Empezar</button><button class="btn" id="onbX" type="button" hidden>Volver</button></div>
+  <p class="hint" id="onbErr" style="color:#c62828;margin-top:10px" hidden>Tocá tu carrera para seguir.</p>
+</div></div>
+
+<div id="veil" aria-hidden="true"></div>
+<aside id="ficha" aria-label="Ficha de la materia" aria-hidden="true"></aside>
+<div id="pick" role="dialog" aria-label="Marcar materia"></div>
+<div id="toast" role="status"><span id="tMsg"></span><button id="tUndo" type="button" hidden>Deshacer</button></div>
+<canvas id="conf" aria-hidden="true"></canvas>
+<script type="application/json" id="mallas">{"version":"2026-11","carreras":{"alimentos":[{"id":"ali-comunicacion-castellano-guarani","n":"Comunicación Castellano-Guaraní","s":1,"r":[]},{"id":"ali-diseno-tecnico-i","n":"Diseño Técnico I","s":1,"r":[]},{"id":"ali-algebra-y-trigonometria-i","n":"Álgebra y Trigonometría I","s":1,"r":[]},{"id":"ali-geometria-analitica-con-calculo","n":"Geometría Analítica con Cálculo","s":1,"r":[]},{"id":"ali-fisica-i","n":"Física I","s":1,"r":[]},{"id":"ali-informatica-basica","n":"Informática Básica","s":1,"r":[]},{"id":"ali-quimica-i","n":"Química I","s":1,"r":[]},{"id":"ali-algebra-y-trigonometria-ii","n":"Álgebra y Trigonometría II","s":2,"r":["ali-algebra-y-trigonometria-i"]},{"id":"ali-analisis-matematico","n":"Análisis Matemático","s":2,"r":["ali-algebra-y-trigonometria-i","ali-geometria-analitica-con-calculo"]},{"id":"ali-fisica-ii","n":"Física II","s":2,"r":["ali-fisica-i"]},{"id":"ali-diseno-tecnico-ii","n":"Diseño Técnico II","s":2,"r":["ali-diseno-tecnico-i"]},{"id":"ali-quimica-ii","n":"Química II","s":2,"r":["ali-quimica-i"]},{"id":"ali-antropologia-cultural","n":"Antropología Cultural","s":2,"r":["ali-comunicacion-castellano-guarani"]},{"id":"ali-fisicoquimica-i","n":"Fisicoquímica I","s":2,"r":["ali-fisica-i","ali-quimica-i"]},{"id":"ali-ecuaciones-diferenciales","n":"Ecuaciones Diferenciales","s":3,"r":["ali-analisis-matematico"]},{"id":"ali-operaciones-basicas-i","n":"Operaciones Básicas I","s":3,"r":["ali-fisicoquimica-i","ali-analisis-matematico"]},{"id":"ali-fisica-iii","n":"Física III","s":3,"r":["ali-fisica-ii"]},{"id":"ali-quimica-iii","n":"Química III","s":3,"r":["ali-quimica-ii"]},{"id":"ali-fisicoquimica-ii","n":"Fisicoquímica II","s":3,"r":["ali-fisicoquimica-i"]},{"id":"ali-epistemologia-de-la-investigacion-i","n":"Epistemología de la Investigación I","s":3,"r":["ali-antropologia-cultural"]},{"id":"ali-probabilidades-y-estadistica-i","n":"Probabilidades y Estadística I","s":4,"r":["ali-algebra-y-trigonometria-ii"]},{"id":"ali-introduccion-a-la-investigacion-de-operaciones","n":"Introducción a la Investigación de Operaciones","s":4,"r":["ali-algebra-y-trigonometria-ii"]},{"id":"ali-operaciones-basicas-ii","n":"Operaciones Básicas II","s":4,"r":["ali-operaciones-basicas-i","ali-ecuaciones-diferenciales"]},{"id":"ali-fisica-iv","n":"Física IV","s":4,"r":["ali-fisica-iii"]},{"id":"ali-gestion-empresarial","n":"Gestión Empresarial","s":4,"r":["ali-epistemologia-de-la-investigacion-i"]},{"id":"ali-higiene-y-seguridad-industrial","n":"Higiene y Seguridad Industrial","s":4,"r":["ali-operaciones-basicas-i"]},{"id":"ali-epistemologia-de-la-investigacion-ii","n":"Epistemología de la Investigación II","s":4,"r":["ali-epistemologia-de-la-investigacion-i"]},{"id":"ali-biologia-general","n":"Biología General","s":5,"r":["ali-quimica-iii"]},{"id":"ali-introduccion-a-la-ingenieria-de-alimentos","n":"Introducción a la Ingeniería de Alimentos","s":5,"r":["ali-operaciones-basicas-ii"]},{"id":"ali-materias-primas-i","n":"Materias Primas I","s":5,"r":["ali-quimica-iii"]},{"id":"ali-quimica-y-bioquimica-de-los-alimentos-i","n":"Química y Bioquímica de los Alimentos I","s":5,"r":["ali-quimica-iii","ali-fisicoquimica-ii"]},{"id":"ali-metodos-numericos-y-modelado-matematico","n":"Métodos Numéricos y Modelado Matemático","s":5,"r":["ali-operaciones-basicas-ii"]},{"id":"ali-quimica-analitica-i","n":"Química Analítica I","s":5,"r":["ali-quimica-iii"]},{"id":"ali-probabilidades-y-estadistica-ii","n":"Probabilidades y Estadística II","s":5,"r":["ali-probabilidades-y-estadistica-i"]},{"id":"ali-microbiologia-i","n":"Microbiología I","s":6,"r":["ali-biologia-general"]},{"id":"ali-operaciones-de-transferencia-de-masa-en-la-industria-de-alimentos","n":"Operaciones de Transferencia de Masa en la Industria de Alimentos","s":6,"r":["ali-metodos-numericos-y-modelado-matematico","ali-introduccion-a-la-ingenieria-de-alimentos"]},{"id":"ali-materias-primas-ii","n":"Materias Primas II","s":6,"r":["ali-materias-primas-i"]},{"id":"ali-quimica-y-bioquimica-de-los-alimentos-ii","n":"Química y Bioquímica de los Alimentos II","s":6,"r":["ali-quimica-y-bioquimica-de-los-alimentos-i"]},{"id":"ali-quimica-analitica-ii","n":"Química Analítica II","s":6,"r":["ali-quimica-analitica-i"]},{"id":"ali-materiales-y-envases-en-la-industria-de-alimentos","n":"Materiales y Envases en la Industria de Alimentos","s":6,"r":["ali-metodos-numericos-y-modelado-matematico","ali-introduccion-a-la-ingenieria-de-alimentos"]},{"id":"ali-analisis-de-los-alimentos-i","n":"Análisis de los Alimentos I","s":6,"r":["ali-quimica-y-bioquimica-de-los-alimentos-i"]},{"id":"ali-gestion-y-control-de-calidad-de-los-alimentos-i","n":"Gestión y Control de Calidad de los Alimentos I","s":7,"r":["ali-quimica-y-bioquimica-de-los-alimentos-ii","ali-analisis-de-los-alimentos-i"]},{"id":"ali-operaciones-de-transferencia-de-calor-en-la-industria-de-alimentos","n":"Operaciones de Transferencia de Calor en la Industria de Alimentos","s":7,"r":["ali-operaciones-de-transferencia-de-masa-en-la-industria-de-alimentos"]},{"id":"ali-nutricion-i","n":"Nutrición I","s":7,"r":["ali-quimica-y-bioquimica-de-los-alimentos-ii"]},{"id":"ali-analisis-de-los-alimentos-ii","n":"Análisis de los Alimentos II","s":7,"r":["ali-quimica-y-bioquimica-de-los-alimentos-ii","ali-analisis-de-los-alimentos-i"]},{"id":"ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-i","n":"Tecnologías Específicas de la Transformación de los Alimentos I","s":7,"r":["ali-operaciones-de-transferencia-de-masa-en-la-industria-de-alimentos","ali-materiales-y-envases-en-la-industria-de-alimentos","ali-analisis-de-los-alimentos-i"]},{"id":"ali-microbiologia-ii","n":"Microbiología II","s":7,"r":["ali-microbiologia-i"]},{"id":"ali-ingles-i","n":"Inglés I","s":7,"r":["ali-comunicacion-castellano-guarani"]},{"id":"ali-gestion-y-control-de-calidad-de-los-alimentos-ii","n":"Gestión y Control de Calidad de los Alimentos II","s":8,"r":["ali-analisis-de-los-alimentos-ii","ali-gestion-y-control-de-calidad-de-los-alimentos-i"]},{"id":"ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii","n":"Tecnologías Específicas de la Transformación de los Alimentos II","s":8,"r":["ali-operaciones-de-transferencia-de-calor-en-la-industria-de-alimentos"]},{"id":"ali-nutricion-ii","n":"Nutrición II","s":8,"r":["ali-nutricion-i"]},{"id":"ali-economia-organizacion-y-legislacion","n":"Economía, Organización y Legislación","s":8,"r":["ali-gestion-empresarial"]},{"id":"ali-ingles-ii","n":"Inglés II","s":8,"r":["ali-ingles-i"]},{"id":"ali-gestion-ambiental-i","n":"Gestión Ambiental I","s":8,"r":["ali-gestion-y-control-de-calidad-de-los-alimentos-i"]},{"id":"ali-ingenieria-de-instalaciones-industriales","n":"Ingeniería de Instalaciones Industriales","s":8,"r":["ali-operaciones-de-transferencia-de-calor-en-la-industria-de-alimentos","ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-i"]},{"id":"ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-iii","n":"Tecnologías Específicas de la Transformación de los Alimentos III","s":9,"r":["ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii","ali-ingenieria-de-instalaciones-industriales"]},{"id":"ali-gestion-ambiental-ii","n":"Gestión Ambiental II","s":9,"r":["ali-gestion-ambiental-i","ali-ingenieria-de-instalaciones-industriales"]},{"id":"ali-proyecto-industrial-i","n":"Proyecto Industrial I","s":9,"r":["ali-economia-organizacion-y-legislacion","ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii"]},{"id":"ali-toxicologia-de-los-alimentos","n":"Toxicología de los Alimentos","s":9,"r":["ali-quimica-y-bioquimica-de-los-alimentos-ii","ali-analisis-de-los-alimentos-ii","ali-microbiologia-ii"]},{"id":"ali-evaluacion-sensorial-de-los-alimentos","n":"Evaluación Sensorial de los Alimentos","s":9,"r":["ali-quimica-y-bioquimica-de-los-alimentos-ii","ali-analisis-de-los-alimentos-ii"]},{"id":"ali-procesos-de-conservacion-de-alimentos","n":"Procesos de Conservación de Alimentos","s":9,"r":["ali-gestion-y-control-de-calidad-de-los-alimentos-ii","ali-ingenieria-de-instalaciones-industriales"]},{"id":"ali-biotecnologia","n":"Biotecnología","s":9,"r":["ali-microbiologia-ii","ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii"]},{"id":"ali-ingenieria-de-los-procesos-basicos","n":"Ingeniería de los Procesos Básicos","s":10,"r":["ali-ingenieria-de-instalaciones-industriales","ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii","ali-procesos-de-conservacion-de-alimentos"]},{"id":"ali-proyecto-industrial-ii","n":"Proyecto Industrial II","s":10,"r":["ali-proyecto-industrial-i"]},{"id":"ali-control-de-procesos-en-la-industria-de-alimentos","n":"Control de Procesos en la Industria de Alimentos","s":10,"r":["ali-ingenieria-de-instalaciones-industriales","ali-procesos-de-conservacion-de-alimentos"]},{"id":"ali-innovacion-de-productos-alimenticios","n":"Innovación de Productos Alimenticios","s":10,"r":["ali-tecnologias-especificas-de-la-transformacion-de-los-alimentos-ii","ali-proyecto-industrial-i","ali-procesos-de-conservacion-de-alimentos"]},{"id":"ali-seminario-de-trabajo-final","n":"Seminario de Trabajo Final","s":10,"r":[],"h":9}],"electronica":[{"id":"ele-701","c":"CYTIE 701","n":"Álgebra","s":1,"r":[]},{"id":"ele-702","c":"CYTIE 702","n":"Geometría Analítica y Vectorial","s":1,"r":[]},{"id":"ele-703","c":"CYTIE 703","n":"Cálculo I","s":1,"r":[]},{"id":"ele-704","c":"CYTIE 704","n":"Diseño Técnico","s":1,"r":[]},{"id":"ele-705","c":"CYTIE 705","n":"Comunicación (Castellano/Guaraní)","s":1,"r":[]},{"id":"ele-706","c":"CYTIE 706","n":"Física I","s":1,"r":[]},{"id":"ele-707","c":"CYTIE 707","n":"Álgebra Lineal","s":2,"r":["ele-701"]},{"id":"ele-708","c":"CYTIE 708","n":"Cálculo II","s":2,"r":["ele-703"]},{"id":"ele-709","c":"CYTIE 709","n":"Química","s":2,"r":[]},{"id":"ele-710","c":"CYTIE 710","n":"Física II","s":2,"r":["ele-706"]},{"id":"ele-711","c":"CYTIE 711","n":"Idioma I","s":2,"r":["ele-705"]},{"id":"ele-712","c":"CYTIE 712","n":"Cálculo Vectorial","s":3,"r":["ele-708","ele-707"]},{"id":"ele-713","c":"CYTIE 713","n":"Cálculo III","s":3,"r":["ele-708"]},{"id":"ele-714","c":"CYTIE 714","n":"Física III","s":3,"r":["ele-710"]},{"id":"ele-715","c":"CYTIE 715","n":"Computación I","s":3,"r":[]},{"id":"ele-716","c":"CYTIE 716","n":"Idioma II","s":3,"r":["ele-711"]},{"id":"ele-717","c":"CYTIE 717","n":"Cálculo IV","s":4,"r":["ele-713","ele-712"]},{"id":"ele-718","c":"CYTIE 718","n":"Física IV","s":4,"r":["ele-714"]},{"id":"ele-719","c":"CYTIE 719","n":"Termodinámica","s":4,"r":["ele-710"]},{"id":"ele-720","c":"CYTIE 720","n":"Análisis de Circuitos I","s":4,"r":["ele-701","ele-714","ele-703"]},{"id":"ele-721","c":"CYTIE 721","n":"Computación II","s":4,"r":["ele-715"]},{"id":"ele-722","c":"CYTIE 722","n":"Electrónica I","s":5,"r":["ele-718","ele-720"]},{"id":"ele-723","c":"CYTIE 723","n":"Estadística","s":5,"r":["ele-701"]},{"id":"ele-724","c":"CYTIE 724","n":"Análisis de Circuitos II","s":5,"r":["ele-720"]},{"id":"ele-725","c":"CYTIE 725","n":"Mecánica Racional","s":5,"r":["ele-706","ele-710"]},{"id":"ele-726","c":"CYTIE 726","n":"Modelación en Ingeniería","s":5,"r":["ele-718","ele-717"]},{"id":"ele-727","c":"CYTIE 727","n":"Electrónica II","s":6,"r":["ele-722"]},{"id":"ele-728","c":"CYTIE 728","n":"Digital I","s":6,"r":["ele-722"]},{"id":"ele-729","c":"CYTIE 729","n":"Administración y Organización de Empresas","s":6,"r":["ele-723"]},{"id":"ele-730","c":"CYTIE 730","n":"Máquinas Eléctricas","s":6,"r":["ele-719"]},{"id":"ele-731","c":"CYTIE 731","n":"Teoría de los Circuitos","s":6,"r":["ele-713","ele-724"]},{"id":"ele-732","c":"CYTIE 732","n":"Electrónica III","s":7,"r":["ele-727"]},{"id":"ele-733","c":"CYTIE 733","n":"Digital II","s":7,"r":["ele-728"]},{"id":"ele-734","c":"CYTIE 734","n":"Instalaciones Eléctricas","s":7,"r":["ele-730","ele-714"]},{"id":"ele-735","c":"CYTIE 735","n":"Teoría de las Comunicaciones I","s":7,"r":["ele-717","ele-722"]},{"id":"ele-736","c":"CYTIE 736","n":"Contabilidad y Administración Financiera","s":7,"r":["ele-729"]},{"id":"ele-737","c":"CYTIE 737","n":"Microcontroladores","s":8,"r":["ele-732","ele-721"]},{"id":"ele-738","c":"CYTIE 738","n":"Electrónica Industrial","s":8,"r":["ele-731","ele-732"]},{"id":"ele-739","c":"CYTIE 739","n":"Digital III","s":8,"r":["ele-733"]},{"id":"ele-740","c":"CYTIE 740","n":"Teoría de las Comunicaciones II","s":8,"r":["ele-735"]},{"id":"ele-741","c":"CYTIE 741","n":"Mediciones Electrónicas","s":9,"r":["ele-732"]},{"id":"ele-742","c":"CYTIE 742","n":"Control I","s":9,"r":["ele-738"]},{"id":"ele-743","c":"CYTIE 743","n":"Proyecto y Diseño Electrónico I","s":9,"r":["ele-726","ele-736"]},{"id":"ele-744","c":"CYTIE 744","n":"Seguridad, Higiene Laboral y Control Ambiental","s":9,"r":["ele-734","ele-738"]},{"id":"ele-745","c":"CYTIE 745","n":"Metodología de la Investigación II","s":9,"r":["ele-705","ele-716"]},{"id":"ele-746","c":"CYTIE 746","n":"Técnicas Digitales","s":10,"r":[],"h":9},{"id":"ele-747","c":"CYTIE 747","n":"Control II","s":10,"r":["ele-742"]},{"id":"ele-748","c":"CYTIE 748","n":"Seminario de Tesis","s":10,"r":[],"h":9},{"id":"ele-749","c":"CYTIE 749","n":"Legislación Laboral","s":10,"r":[],"h":9},{"id":"ele-750","c":"CYTIE 750","n":"Proyecto y Diseño Electrónico II","s":10,"r":["ele-743"]},{"id":"ele-751","c":"CYTIE 751","n":"Pasantías Profesionales","s":10,"r":[],"h":9}],"ambiental":[{"id":"amb-castellano","n":"Castellano","s":1,"r":[]},{"id":"amb-guarani","n":"Guaraní","s":1,"r":[]},{"id":"amb-algebra-y-trigonometria-i","n":"Álgebra y Trigonometría I","s":1,"r":[]},{"id":"amb-geometria-analitica-con-calculo","n":"Geometría Analítica con Cálculo","s":1,"r":[]},{"id":"amb-fisica-i","n":"Física I","s":1,"r":[]},{"id":"amb-quimica-i","n":"Química I","s":1,"r":[]},{"id":"amb-diseno-tecnico-i","n":"Diseño Técnico I","s":1,"r":[]},{"id":"amb-algebra-y-trigonometria-ii","n":"Álgebra y Trigonometría II","s":2,"r":["amb-algebra-y-trigonometria-i"]},{"id":"amb-analisis-matematico","n":"Análisis Matemático","s":2,"r":["amb-algebra-y-trigonometria-i","amb-geometria-analitica-con-calculo"]},{"id":"amb-fisica-ii","n":"Física II","s":2,"r":["amb-fisica-i"]},{"id":"amb-diseno-tecnico-ii","n":"Diseño Técnico II","s":2,"r":["amb-diseno-tecnico-i"]},{"id":"amb-quimica-ii","n":"Química II","s":2,"r":["amb-quimica-i"]},{"id":"amb-antropologia-socio-cultural","n":"Antropología Socio-Cultural","s":2,"r":["amb-castellano","amb-guarani"]},{"id":"amb-gestion-empresarial","n":"Gestión Empresarial","s":2,"r":[]},{"id":"amb-ecuaciones-diferenciales","n":"Ecuaciones Diferenciales","s":3,"r":["amb-analisis-matematico"]},{"id":"amb-operaciones-basicas-i","n":"Operaciones Básicas I","s":3,"r":["amb-algebra-y-trigonometria-ii","amb-fisica-ii"]},{"id":"amb-fisica-iii","n":"Física III","s":3,"r":["amb-fisica-ii"]},{"id":"amb-quimica-iii","n":"Química III","s":3,"r":["amb-quimica-ii"]},{"id":"amb-fisicoquimica-i","n":"Fisicoquímica I","s":3,"r":["amb-fisica-ii","amb-quimica-ii"]},{"id":"amb-epistemologia-de-la-investigacion-i","n":"Epistemología de la Investigación I","s":3,"r":[]},{"id":"amb-probabilidades-y-estadistica-i","n":"Probabilidades y Estadística I","s":4,"r":["amb-epistemologia-de-la-investigacion-i"]},{"id":"amb-introduccion-a-la-investigacion-de-operaciones","n":"Introducción a la Investigación de Operaciones","s":4,"r":["amb-operaciones-basicas-i"]},{"id":"amb-operaciones-basicas-ii","n":"Operaciones Básicas II","s":4,"r":["amb-operaciones-basicas-i","amb-ecuaciones-diferenciales"]},{"id":"amb-fisica-iv","n":"Física IV","s":4,"r":["amb-fisica-iii"]},{"id":"amb-fisicoquimica-ii","n":"Fisicoquímica II","s":4,"r":["amb-fisicoquimica-i"]},{"id":"amb-seguridad-e-higiene-laboral","n":"Seguridad e Higiene Laboral","s":4,"r":["amb-gestion-empresarial"]},{"id":"amb-epistemologia-de-la-investigacion-ii","n":"Epistemología de la Investigación II","s":4,"r":["amb-epistemologia-de-la-investigacion-i"]},{"id":"amb-biologia-general","n":"Biología General","s":5,"r":["amb-quimica-ii"]},{"id":"amb-ecologia-i","n":"Ecología I","s":5,"r":["amb-fisicoquimica-ii"]},{"id":"amb-informatica","n":"Informática","s":5,"r":["amb-probabilidades-y-estadistica-i"]},{"id":"amb-ambiente-y-sociedad","n":"Ambiente y Sociedad","s":5,"r":["amb-antropologia-socio-cultural"]},{"id":"amb-geologia","n":"Geología","s":5,"r":["amb-fisicoquimica-ii"]},{"id":"amb-introduccion-a-la-ingenieria-ambiental","n":"Introducción a la Ingeniería Ambiental","s":5,"r":["amb-operaciones-basicas-ii"]},{"id":"amb-bioestadistica","n":"Bioestadística","s":5,"r":["amb-probabilidades-y-estadistica-i"]},{"id":"amb-biodiversidad","n":"Biodiversidad","s":6,"r":["amb-ecologia-i","amb-biologia-general"]},{"id":"amb-ecologia-ii","n":"Ecología II","s":6,"r":["amb-ecologia-i"]},{"id":"amb-microbiologia-ambiental","n":"Microbiología Ambiental","s":6,"r":["amb-biologia-general","amb-bioestadistica"]},{"id":"amb-idioma-extranjero-i","n":"Idioma Extranjero I","s":6,"r":["amb-castellano","amb-guarani"]},{"id":"amb-sistema-de-informacion-geografica","n":"Sistema de Información Geográfica","s":6,"r":["amb-informatica","amb-geologia"]},{"id":"amb-meteorologia-y-climatologia","n":"Meteorología y Climatología","s":6,"r":["amb-fisica-iv","amb-geologia"]},{"id":"amb-idioma-extranjero-ii","n":"Idioma Extranjero II","s":7,"r":["amb-idioma-extranjero-i"]},{"id":"amb-legislacion-ambiental","n":"Legislación Ambiental","s":7,"r":["amb-ambiente-y-sociedad"]},{"id":"amb-quimica-ecologica","n":"Química Ecológica","s":7,"r":["amb-quimica-iii","amb-ecologia-ii"]},{"id":"amb-contaminacion","n":"Contaminación","s":7,"r":["amb-introduccion-a-la-ingenieria-ambiental"]},{"id":"amb-procesos-tecnologicos-de-depuracion-y-recuperacion-de-agua","n":"Procesos Tecnológicos de Depuración y Recuperación de Agua","s":7,"r":["amb-introduccion-a-la-ingenieria-ambiental","amb-microbiologia-ambiental"]},{"id":"amb-recursos-naturales","n":"Recursos Naturales","s":7,"r":["amb-biodiversidad"]},{"id":"amb-calidad-ambiental","n":"Calidad Ambiental","s":8,"r":["amb-quimica-ecologica","amb-contaminacion"]},{"id":"amb-procesos-tecnologicos-de-tratamiento-y-recuperacion-de-residuos","n":"Procesos Tecnológicos de Tratamiento y Recuperación de Residuos","s":8,"r":["amb-introduccion-a-la-ingenieria-ambiental","amb-procesos-tecnologicos-de-depuracion-y-recuperacion-de-agua"]},{"id":"amb-manejo-de-cuenca","n":"Manejo de Cuenca","s":8,"r":["amb-sistema-de-informacion-geografica","amb-recursos-naturales"]},{"id":"amb-economia-ambiental","n":"Economía Ambiental","s":8,"r":["amb-legislacion-ambiental","amb-recursos-naturales"]},{"id":"amb-toxicologia-y-salud-publica","n":"Toxicología y Salud Pública","s":8,"r":["amb-biologia-general"]},{"id":"amb-biotecnologia-ambiental","n":"Biotecnología Ambiental","s":8,"r":["amb-quimica-ecologica","amb-microbiologia-ambiental"]},{"id":"amb-ordenamiento-territorial","n":"Ordenamiento Territorial","s":9,"r":["amb-sistema-de-informacion-geografica","amb-ambiente-y-sociedad"]},{"id":"amb-evaluacion-del-impacto-ambiental-i","n":"Evaluación del Impacto Ambiental I","s":9,"r":["amb-legislacion-ambiental"]},{"id":"amb-tecnologia-energetica","n":"Tecnología Energética","s":9,"r":["amb-biotecnologia-ambiental","amb-procesos-tecnologicos-de-tratamiento-y-recuperacion-de-residuos"]},{"id":"amb-planificacion-y-gestion-ambiental","n":"Planificación y Gestión Ambiental","s":9,"r":["amb-toxicologia-y-salud-publica"]},{"id":"amb-sustentabilidad-y-educacion-ambiental","n":"Sustentabilidad y Educación Ambiental","s":9,"r":["amb-ambiente-y-sociedad","amb-recursos-naturales"]},{"id":"amb-seminario-de-tesis","n":"Seminario de Tesis","s":10,"r":[],"h":9},{"id":"amb-evaluacion-del-impacto-ambiental-ii","n":"Evaluación del Impacto Ambiental II","s":10,"r":["amb-evaluacion-del-impacto-ambiental-i"]},{"id":"amb-evaluacion-de-riesgos","n":"Evaluación de Riesgos","s":10,"r":["amb-ordenamiento-territorial","amb-sustentabilidad-y-educacion-ambiental"]},{"id":"amb-proyectos-ambientales","n":"Proyectos Ambientales","s":10,"r":["amb-ordenamiento-territorial","amb-evaluacion-del-impacto-ambiental-i"]},{"id":"amb-auditoria-ambiental","n":"Auditoría Ambiental","s":10,"r":["amb-evaluacion-del-impacto-ambiental-i","amb-legislacion-ambiental"]}],"informatica":[{"id":"inf-comunicacion-oral-y-escrita","n":"Comunicación Oral y Escrita","s":1,"r":[]},{"id":"inf-fisica-i","n":"Física I","s":1,"r":[]},{"id":"inf-introduccion-a-la-informatica","n":"Introducción a la Informática","s":1,"r":[]},{"id":"inf-logica-matematica","n":"Lógica Matemática","s":1,"r":[]},{"id":"inf-matematica-i","n":"Matemática I","s":1,"r":[]},{"id":"inf-psicologia","n":"Psicología","s":1,"r":[]},{"id":"inf-fisica-ii","n":"Física II","s":2,"r":["inf-fisica-i"]},{"id":"inf-programacion-i","n":"Programación I","s":2,"r":["inf-introduccion-a-la-informatica"]},{"id":"inf-matematica-ii","n":"Matemática II","s":2,"r":["inf-matematica-i"]},{"id":"inf-arquitectura-de-computadoras","n":"Arquitectura de Computadoras","s":2,"r":["inf-logica-matematica"]},{"id":"inf-ingles-tecnico-i","n":"Inglés Técnico I","s":2,"r":["inf-comunicacion-oral-y-escrita"]},{"id":"inf-administracion-i","n":"Administración I","s":2,"r":[]},{"id":"inf-ingles-tecnico-ii","n":"Inglés Técnico II","s":3,"r":["inf-ingles-tecnico-i"]},{"id":"inf-redes-de-computadoras","n":"Redes de Computadoras","s":3,"r":["inf-arquitectura-de-computadoras"]},{"id":"inf-administracion-ii","n":"Administración II","s":3,"r":["inf-administracion-i"]},{"id":"inf-programacion-ii","n":"Programación II","s":3,"r":["inf-programacion-i"]},{"id":"inf-revista-del-derecho","n":"Revista del Derecho","s":3,"r":[]},{"id":"inf-psicologia-empresarial","n":"Psicología Empresarial","s":3,"r":["inf-psicologia"]},{"id":"inf-matematica-iii","n":"Matemática III","s":3,"r":["inf-matematica-ii"]},{"id":"inf-base-de-datos","n":"Base de Datos","s":4,"r":["inf-programacion-ii"]},{"id":"inf-economia-i","n":"Economía I","s":4,"r":["inf-administracion-ii"]},{"id":"inf-administracion-iii","n":"Administración III","s":4,"r":["inf-administracion-ii"]},{"id":"inf-programacion-iii","n":"Programación III","s":4,"r":["inf-programacion-ii"]},{"id":"inf-derecho-laboral-y-comercial","n":"Derecho Laboral y Comercial","s":4,"r":["inf-revista-del-derecho"]},{"id":"inf-teoria-de-las-probabilidades-y-estadistica","n":"Teoría de las Probabilidades y Estadística","s":4,"r":["inf-matematica-iii"]},{"id":"inf-programacion-iv-web","n":"Programación IV (Web)","s":5,"r":["inf-base-de-datos","inf-programacion-iii"]},{"id":"inf-elaboracion-y-evaluacion-de-proyectos","n":"Elaboración y Evaluación de Proyectos","s":5,"r":["inf-administracion-iii"]},{"id":"inf-economia-ii","n":"Economía II","s":5,"r":["inf-economia-i"]},{"id":"inf-introduccion-a-los-sistemas-de-informacion","n":"Introducción a los Sistemas de Información","s":5,"r":["inf-base-de-datos"]},{"id":"inf-mercadotecnia","n":"Mercadotecnia","s":5,"r":["inf-economia-i"]},{"id":"inf-ingenieria-de-software","n":"Ingeniería de Software","s":6,"r":["inf-base-de-datos","inf-introduccion-a-los-sistemas-de-informacion","inf-programacion-iv-web"]},{"id":"inf-valores-y-etica-profesional","n":"Valores y Ética Profesional","s":6,"r":["inf-revista-del-derecho","inf-derecho-laboral-y-comercial"]},{"id":"inf-organizacion-y-recursos-humanos","n":"Organización y Recursos Humanos","s":6,"r":["inf-administracion-ii"]},{"id":"inf-administracion-de-proyectos","n":"Administración de Proyectos","s":6,"r":["inf-elaboracion-y-evaluacion-de-proyectos"]},{"id":"inf-metodologia-de-la-investigacion-i","n":"Metodología de la Investigación I","s":6,"r":["inf-comunicacion-oral-y-escrita"]},{"id":"inf-sistemas-operativos","n":"Sistemas Operativos","s":7,"r":["inf-programacion-iv-web"]},{"id":"inf-administracion-financiera","n":"Administración Financiera","s":7,"r":["inf-economia-ii","inf-administracion-iii"]},{"id":"inf-auditoria-informatica-i","n":"Auditoría Informática I","s":7,"r":["inf-ingenieria-de-software"]},{"id":"inf-multimedios","n":"Multimedios","s":7,"r":["inf-programacion-iv-web"]},{"id":"inf-metodologia-de-la-investigacion-ii","n":"Metodología de la Investigación II","s":7,"r":["inf-metodologia-de-la-investigacion-i"]},{"id":"inf-auditoria-informatica-ii","n":"Auditoría Informática II","s":8,"r":["inf-auditoria-informatica-i"]},{"id":"inf-presupuesto-y-control-presupuestario","n":"Presupuesto y Control Presupuestario","s":8,"r":["inf-administracion-financiera"]},{"id":"inf-seminario-de-tesis","n":"Seminario de Tesis","s":8,"r":[],"h":7}]}}</script>
+
+<script>
+{
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const DATA=JSON.parse($('#mallas').textContent);
+const IC={alim:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3"/><path d="M7.5 15h9"/>',elec:'<rect x="7" y="7" width="10" height="10" rx="1.5"/><path d="M10 3v4M14 3v4M10 17v4M14 17v4M3 10h4M3 14h4M17 10h4M17 14h4"/>',amb:'<path d="M5 20c0-9 6-15 15-15 0 9-5 15-14 15"/><path d="M5 20c3-4 6-7 10-9"/>',inf:'<rect x="4" y="5" width="16" height="11" rx="1.5"/><path d="M2 19h20M8 13v-2M12 13V9M16 13V8"/>',cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2 9 2 12 0v-5"/>',
+  aprobada:'<path d="M5 12l5 5 9-10"/>',rendir:'<path d="M6 21V4h11l-2.5 4L17 12H6"/>',disponible:'<path d="M8 5l11 7-11 7z"/>',cursando:'<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>',bloqueada:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>'};
+const svg=k=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${IC[k]}</svg>`;
+const CARR={alimentos:{n:'Ingeniería en Alimentos',t:'Ingeniería',d:5,ac:['#d9561a','#ff9a5c'],ic:'alim'},
+  electronica:{n:'Ingeniería Electrónica',t:'Ingeniería',d:5,ac:['#1d5cf0','#7fa6ff'],ic:'elec'},
+  ambiental:{n:'Ingeniería Ambiental',t:'Ingeniería',d:5,ac:['#13824a','#5fd394'],ic:'amb'},
+  informatica:{n:'Licenciatura en Informática Empresarial',t:'Licenciatura',d:4,ac:['#c22a5f','#ff7ea8'],ic:'inf'}};
+const ESC={'5-2':{max:5,min:2,t:'1 a 5 · se aprueba con 2'},'10-4':{max:10,min:4,t:'1 a 10 · se aprueba con 4'},'10-6':{max:10,min:6,t:'1 a 10 · se aprueba con 6'},'100-60':{max:100,min:60,t:'1 a 100 · se aprueba con 60'}};
+const LBL={aprobada:'Aprobada',rendir:'Cursando · podés rendir el final',cursando:'Cursando · te falta una correlativa',disponible:'Habilitada',bloqueada:'Te falta una correlativa'};
+const FIL=[['todas','Todas'],['hab','Habilitadas'],['cursando','Cursando'],['aprobada','Aprobadas'],['bloqueada','Bloqueadas']];
+const ORD=n=>n+(n===1||n===3?'.er':'.º');
+const SEMN=['','Primer','Segundo','Tercer','Cuarto','Quinto','Sexto','Séptimo','Octavo','Noveno','Décimo'];
+let S={carrera:null,escala:'5-2',avance:{}};
+let ref=null,loaded=false,saving=false,dirty=false,readOnly=false,filtro='todas',q='',sel=null,hov=null,undoSnap=null,justIds=new Set(),pickId=null;
+
+const malla=()=>DATA.carreras[S.carrera]||[];
+const IDX={}; for(const k in DATA.carreras){ IDX[k]={}; DATA.carreras[k].forEach(m=>IDX[k][m.id]=m); }
+const mat=id=>IDX[S.carrera]?.[id];
+const av=()=>S.avance[S.carrera]||(S.avance[S.carrera]={});
+const rec=id=>av()[id];
+const isAp=id=>rec(id)?.e==='a';
+const E=()=>ESC[S.escala]||ESC['5-2'];
+const car=()=>CARR[S.carrera]||{n:'Mi plan de estudios',t:'',d:5,ac:['#3d4353','#b5bccb'],ic:'cap'};
+const dependents=id=>malla().filter(m=>m.r.includes(id));
+const nYears=()=>Math.ceil(Math.max(...malla().map(m=>m.s),2)/2);
+
+function norm(d){
+  const o={carrera:CARR[d?.carrera]?d.carrera:null,escala:ESC[d?.escala]?d.escala:'5-2',avance:{}};
+  for(const k in CARR){ const a=d?.avance?.[k]; if(!a||typeof a!=='object') continue; o.avance[k]={};
+    for(const id in a){ const r=a[id]; if(!r||!['a','c'].includes(r.e)||id.length>80) continue;
+      o.avance[k][id]={e:r.e,n:typeof r.n==='number'&&isFinite(r.n)?r.n:null,f:typeof r.f==='string'?r.f.slice(0,10):''}; } }
+  return o;
+}
+function hastaOK(m){ return !m.h||malla().filter(x=>x.s<=m.h).every(x=>isAp(x.id)); }
+function reqOK(m){ return m.r.every(isAp)&&hastaOK(m); }
+function status(m){ const r=rec(m.id), ok=reqOK(m);
+  if(r?.e==='a') return 'aprobada'; if(r?.e==='c') return ok?'rendir':'cursando'; return ok?'disponible':'bloqueada'; }
+const allStatus=()=>Object.fromEntries(malla().map(m=>[m.id,status(m)]));
+
+/* ---- Guardado ---- */
+const SB_URL='https://dzwkgvbxsakiutesqbve.supabase.co';
+const SB_KEY='sb_publishable_uQQTgfdqA17yBX_gjd6xqQ_LcINCu_7'; // llave pública: está hecha para ir en la página
+const sb=window.supabase?.createClient(SB_URL,SB_KEY);
+const LS='mi-plan-progreso';
+const CAR_DE={}; for(const k in DATA.carreras) DATA.carreras[k].forEach(m=>CAR_DE[m.id]=k);
+let uid=null, base=null, sT=null; // base = lo último que quedó guardado en Supabase
+function setSync(t){$('#sync').textContent=t}
+function filas(s){ const o={}; for(const k in s.avance) for(const id in s.avance[k]) o[id]=s.avance[k][id]; return o; }
+const igual=(a,b)=>a.e===b.e&&(a.n??null)===(b.n??null)&&(a.f||'')===(b.f||'');
+function persist(){
+  if(uid){ dirty=true; clearTimeout(sT); sT=setTimeout(()=>{ if(!saving) runSb(); },400); return; }
+  try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){}
+  if(!ref||readOnly) return; dirty=true; if(!saving) run();
+}
+// Guarda en Supabase solo lo que cambió
+async function runSb(){
+  if(!uid||!base) return; saving=true; setSync('Guardando…');
+  while(dirty&&uid){ dirty=false;
+    const now=filas(S), quitar=Object.keys(base.filas).filter(id=>!now[id]);
+    const poner=Object.entries(now).filter(([id,r])=>!base.filas[id]||!igual(base.filas[id],r))
+      .map(([id,r])=>({user_id:uid,materia_id:id,estado:r.e==='a'?'aprobada':'cursando',nota:r.e==='a'?r.n:null,fecha:r.e==='a'&&r.f?r.f:null}));
+    const perfil={carrera:S.carrera,escala:S.escala};
+    try{
+      if(perfil.carrera!==base.perfil.carrera||perfil.escala!==base.perfil.escala){
+        const {error}=await sb.from('perfiles').upsert({id:uid,carrera_id:S.carrera,escala:S.escala}); if(error) throw error; }
+      if(poner.length){ const {error}=await sb.from('progreso').upsert(poner); if(error) throw error; }
+      if(quitar.length){ const {error}=await sb.from('progreso').delete().eq('user_id',uid).in('materia_id',quitar); if(error) throw error; }
+      base={perfil,filas:JSON.parse(JSON.stringify(now))};
+    }catch(e){ console.error(e); saving=false; if(!uid) return;
+      setSync('No se pudo guardar; reintentando…'); setTimeout(()=>{ dirty=true; if(!saving) runSb(); },3000+Math.random()*2000); return; }
+  }
+  saving=false; if(uid) setSync('Todo guardado en tu cuenta de Google ✓');
+}
+// Guardado de la versión de prueba en claude.ai
+async function run(){
+  saving=true; setSync('Guardando…');
+  while(dirty){ dirty=false;
+    try{ await ref.set(JSON.parse(JSON.stringify(S))); }
+    catch(e){ saving=false;
+      if(e?.code==='invalid_argument'||e?.code==='permission-denied'){readOnly=true;setSync('No tenés permiso para guardar en esta página')}
+      else if(e?.code==='quota_exceeded') setSync('No hay más espacio para guardar');
+      else { setSync('No se pudo guardar; reintentando…'); setTimeout(()=>{dirty=true;if(!saving)run()},2500+Math.random()*1500); }
+      return; } }
+  saving=false; setSync('Todo guardado en tu cuenta ✓');
+}
+function change(fn,msg,party){
+  undoSnap=JSON.stringify(S); const before=allStatus();
+  fn(); const after=allStatus();
+  const nuevas=malla().filter(m=>(before[m.id]==='bloqueada'||before[m.id]==='cursando')&&(after[m.id]==='disponible'||after[m.id]==='rendir'));
+  justIds=new Set(nuevas.map(m=>m.id)); persist(); render();
+  let t=msg; if(nuevas.length) t+=` · Se habilitó: ${nuevas.map(m=>m.n).join(', ')}`;
+  toast(t,true); if(party) confetti();
+}
+let tT;
+function toast(t,undo){ $('#tMsg').textContent=t; $('#tUndo').hidden=!undo; $('#toast').classList.add('show'); clearTimeout(tT); tT=setTimeout(()=>$('#toast').classList.remove('show'),7000); }
+$('#tUndo').addEventListener('click',()=>{ if(!undoSnap) return; S=norm(JSON.parse(undoSnap)); undoSnap=null; justIds.clear(); persist(); applyTheme(); syncCfg(); render(); if(sel) openFicha(sel); toast('Listo, lo deshice',false); });
+function setEstado(id,e,nota,party){
+  const m=mat(id); if(!m) return; const prev=rec(id);
+  change(()=>{ if(!e) delete av()[id]; else av()[id]={e,n:e==='a'?(nota===undefined?prev?.n??null:nota):null,f:e==='a'?(prev?.f||new Date().toISOString().slice(0,10)):''}; },
+    e==='a'?(nota!=null?`¡Aprobaste ${m.n} con ${nota}!`:`¡Aprobaste ${m.n}!`):e==='c'?`Marcaste que estás cursando ${m.n}`:`${m.n} quedó sin cursar`,party);
+}
+
+/* ---- Confeti ---- */
+function confetti(){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const cv=$('#conf'),x=cv.getContext('2d'),W=cv.width=innerWidth,H=cv.height=innerHeight,cols=[car().ac[0],'#ffc93c','#16181d','#ffffff'];
+  const P=Array.from({length:90},()=>({x:W/2+(Math.random()-.5)*120,y:H*.45,vx:(Math.random()-.5)*14,vy:-Math.random()*13-4,r:Math.random()*6+4,c:cols[Math.floor(Math.random()*4)],a:Math.random()*6}));
+  let f=0; const step=()=>{ x.clearRect(0,0,W,H); for(const p of P){ p.vy+=.38; p.x+=p.vx; p.y+=p.vy; p.a+=.2; x.save(); x.translate(p.x,p.y); x.rotate(p.a); x.fillStyle=p.c; x.fillRect(-p.r/2,-p.r/4,p.r,p.r/2); x.restore(); }
+    if(++f<110) requestAnimationFrame(step); else x.clearRect(0,0,W,H); }; step();
+}
+
+/* ---- Tema y bienvenida ---- */
+const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16},${(n>>8)&255},${n&255},${a})`};
+function setAc(c){ const r=document.documentElement.style; r.setProperty('--acl',c.ac[0]); r.setProperty('--acd',c.ac[1]); r.setProperty('--acsl',rgba(c.ac[0],.14)); r.setProperty('--acsd',rgba(c.ac[1],.2));
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content',c.ac[0]); }
+function applyTheme(){ setAc(car()); $('#bgic').innerHTML=IC[car().ic]; }
+let onbSel=null;
+function openOnb(){
+  onbSel=S.carrera; $('#onbX').hidden=!S.carrera; $('#onbErr').hidden=true;
+  $('#cars').innerHTML=Object.entries(CARR).map(([k,c])=>`<button type="button" class="car" data-car="${k}" style="--k:${c.ac[0]};--kk:${rgba(c.ac[0],.2)}" aria-pressed="${onbSel===k}"><span class="ic">${svg(c.ic)}</span><b>${c.n}</b><span>${c.t} · ${c.d} años · ${DATA.carreras[k].length} materias</span></button>`).join('');
+  $('#escalas').innerHTML=Object.entries(ESC).map(([k,v])=>`<label><input type="radio" name="esc" value="${k}"${S.escala===k?' checked':''}><span>${v.t}</span></label>`).join('');
+  $('#onb').classList.add('open'); $('#onb').scrollTop=0;
+}
+const closeOnb=()=>{ $('#onb').classList.remove('open'); applyTheme(); };
+$('#cars').addEventListener('click',e=>{ const b=e.target.closest('[data-car]'); if(!b) return; onbSel=b.dataset.car;
+  $('#cars').querySelectorAll('.car').forEach(x=>x.setAttribute('aria-pressed',x===b)); setAc(CARR[onbSel]); $('#onbErr').hidden=true; });
+$('#onbX').addEventListener('click',closeOnb);
+$('#empezar').addEventListener('click',()=>{
+  if(!onbSel){ $('#onbErr').hidden=false; return; }
+  const nueva=onbSel!==S.carrera; S.carrera=onbSel; S.escala=document.querySelector('input[name=esc]:checked')?.value||S.escala; av();
+  persist(); closeOnb(); syncCfg(); sel=null; filtro='todas'; render();
+  toast(nueva?`¡Listo! Ya tenés cargada la malla de ${car().n}. Tocá cada materia que aprobaste.`:'Preferencias guardadas',false);
+});
+$('#cambiar').addEventListener('click',openOnb); $('#cambiar2').addEventListener('click',openOnb);
+
+/* ---- Dibujo ---- */
+function render(){
+  const st=allStatus(), M=malla(), c=car(), n=M.length;
+  $('#tag').innerHTML=S.carrera?`${svg(c.ic)} Correlativas · ${esc(c.t)} · ${c.d} años · ${n} materias`:'Plan de estudios';
+  $('#titulo').textContent=c.n; $('#cambiar').hidden=!S.carrera;
+  const ap=M.filter(m=>isAp(m.id)), con=ap.filter(m=>rec(m.id).n!=null), falt=n-ap.length, pc=n?Math.round(ap.length/n*100):0;
+  $('#arc').setAttribute('stroke-dasharray',`${(pc/100*314.16).toFixed(1)} 400`);
+  $('#pct').innerHTML=`${pc}%<small>aprobado</small>`;
+  $('#prom').innerHTML=con.length?esc((con.reduce((a,m)=>a+rec(m.id).n,0)/con.length).toFixed(2))+` <small>/ ${E().max}</small>`:'–';
+  const sinN=ap.length-con.length;
+  $('#promH').textContent=con.length?`Promedio de ${con.length} materia${con.length>1?'s':''}${sinN?` · ${sinN} sin nota`:''}`:ap.length?'Cargá alguna nota para ver tu promedio (es opcional)':'Tu promedio aparece al cargar notas';
+  if(loaded) $('#faltan').textContent=!S.carrera?'Elegí tu carrera para empezar':!ap.length?'Tocá cada materia que ya aprobaste para ver qué se te habilita':falt?`Aprobaste ${ap.length} de ${n} materias · te ${falt===1?'falta 1':'faltan '+falt} para recibirte`:'¡Aprobaste todas las materias de la carrera! Felicitaciones';
+  $('#mallaInfo').textContent=S.carrera?`${c.n}: ${n} materias en ${Math.max(...M.map(m=>m.s))} semestres, según el plan de correlatividades cargado (versión ${DATA.version}).`:'';
+  const hab=M.filter(m=>st[m.id]==='disponible'||st[m.id]==='rendir').sort((a,b)=>a.s-b.s);
+  const now=$('#now'); now.hidden=!loaded||!S.carrera||!hab.length||ap.length===n;
+  if(!now.hidden) now.innerHTML=`<h3>Habilitadas para vos (${hab.length})</h3><div class="chips">${hab.slice(0,8).map(m=>`<button type="button" class="chip" data-open="${m.id}">${esc(m.n)}</button>`).join('')}${hab.length>8?`<button type="button" class="chip" data-f="hab">+${hab.length-8} más</button>`:''}</div>`;
+  const anios=Array.from({length:nYears()},(_,i)=>i+1);
+  const nSem=Math.max(...M.map(m=>m.s)), sems=Array.from({length:nSem},(_,i)=>i+1);
+  $('#years').innerHTML=S.carrera?sems.map(sm=>{const del=M.filter(m=>m.s===sm),okk=del.filter(m=>isAp(m.id)).length;
+    return (sm>1&&sm%2===1?'<span class="ysep" aria-hidden="true"></span>':'')+`<button type="button" class="yr" data-sem="${sm}"><b>${ORD(sm)} semestre</b><span>${ORD(Math.ceil(sm/2))} año · ${okk}/${del.length}</span><div class="mini"><i style="width:${del.length?okk/del.length*100:0}%"></i></div></button>`}).join(''):'';
+  const fk=s=>filtro==='todas'||(filtro==='hab'?(s==='disponible'||s==='rendir'):filtro==='cursando'?(s==='cursando'||s==='rendir'):s===filtro);
+  const cnt=k=>M.filter(m=>k==='todas'||(k==='hab'?(st[m.id]==='disponible'||st[m.id]==='rendir'):k==='cursando'?(st[m.id]==='cursando'||st[m.id]==='rendir'):st[m.id]===k)).length;
+  $('#filtros').innerHTML=FIL.map(([k,t])=>`<button type="button" class="${filtro===k?'on':''}" data-f="${k}" aria-pressed="${filtro===k}">${t} ${S.carrera?cnt(k):''}</button>`).join('');
+  if(!loaded||!S.carrera){ $('#mapa').innerHTML='<svg id="lines" aria-hidden="true"></svg>'; return; }
+  const qq=q.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const match=m=>!qq||(m.n+' '+(m.c||'')).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').includes(qq);
+  const cardH=m=>{ const s2=st[m.id], r=rec(m.id), dim=!fk(s2)||!match(m)?' dim':'';
+    const right=s2==='aprobada'?(r.n!=null?`<span class="nota" title="Nota final">${esc(r.n)}</span>`:''):(s2==='disponible'||s2==='rendir')?`<button type="button" class="q" data-q="${m.id}" aria-label="Marcar ${esc(m.n)} como aprobada">Aprobé</button>`:'';
+    return `<div class="card s-${s2}${dim}${justIds.has(m.id)?' just':''}" role="button" tabindex="0" data-id="${m.id}" aria-label="${esc(m.n)}: ${LBL[s2]}"><span class="st">${svg(s2)}</span><span class="tx"><b>${esc(m.n)}</b><em>${m.c?esc(m.c)+' · ':''}${LBL[s2]}</em></span>${right}</div>`; };
+  $('#mapa').innerHTML='<svg id="lines" aria-hidden="true"></svg>'+anios.map(a=>{
+    const yd=M.filter(m=>Math.ceil(m.s/2)===a), yok=yd.filter(m=>isAp(m.id)).length;
+    return `<div class="yg" id="y${a}"><h3><span>${ORD(a)} año</span><span>${yok}/${yd.length}</span></h3><div>`+[a*2-1,a*2].filter(sm=>sm<=nSem).map(sm=>{
+      const ms=M.filter(m=>m.s===sm), okk=ms.filter(m=>isAp(m.id)).length;
+      return `<section class="col" id="s${sm}" data-s="${sm}"><header><div><h2>${ORD(sm)} semestre</h2><span class="yl">${ORD(a)} año · ${okk} de ${ms.length} aprobadas</span></div><span class="cnt">${okk}/${ms.length}</span><span class="nav2"><button type="button" data-go="-1" aria-label="Semestre anterior"${sm===1?' disabled':''}>‹</button><button type="button" data-go="1" aria-label="Semestre siguiente"${sm===nSem?' disabled':''}>›</button></span></header>${ms.map(cardH).join('')}</section>`;
+    }).join('')+'</div></div>';
+  }).join('');
+  justIds.clear(); mark(); if(typeof setActive==='function') setActive(curSem);
+}
+function mark(){
+  const mapa=$('#mapa'), sv=$('#lines'); if(!sv) return;
+  mapa.querySelectorAll('.card').forEach(c=>c.classList.remove('sel','rel'));
+  sv.innerHTML=''; const m=mat(hov||sel); if(!m) return;
+  const phone=matchMedia('(max-width:700px)').matches;
+  const card=id=>mapa.querySelector(`.card[data-id="${CSS.escape(id)}"]`);
+  const me=card(m.id); if(!me) return; if(sel===m.id) me.classList.add('sel'); if(phone) return;
+  const R=mapa.getBoundingClientRect(); sv.setAttribute('width',mapa.scrollWidth); sv.setAttribute('height',mapa.scrollHeight);
+  const pt=(el,right)=>{const r=el.getBoundingClientRect();return [right?r.right-R.left:r.left-R.left,r.top-R.top+r.height/2]};
+  const line=(a,b,col,dash)=>{ if(!a||!b) return; a.classList.add('rel'); b.classList.add('rel');
+    const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect(); let p,qq,d;
+    if(Math.abs(ra.left-rb.left)<5){ p=pt(a,true); qq=pt(b,true); const k=Math.max(p[0],qq[0])+30; d=`M${p[0]} ${p[1]}C${k} ${p[1]} ${k} ${qq[1]} ${qq[0]} ${qq[1]}`; }
+    else { const fw=ra.left<rb.left; p=pt(a,fw); qq=pt(b,!fw); const k=(qq[0]-p[0])/2; d=`M${p[0]} ${p[1]}C${p[0]+k} ${p[1]} ${qq[0]-k} ${qq[1]} ${qq[0]} ${qq[1]}`; }
+    sv.insertAdjacentHTML('beforeend',`<path d="${d}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linecap="round" ${dash}/><circle cx="${qq[0]}" cy="${qq[1]}" r="4.5" fill="${col}"/>`);
+  };
+  m.r.forEach(id=>line(card(id),me,'var(--ac)',''));
+  dependents(m.id).forEach(d=>line(me,card(d.id),'var(--mut)','stroke-dasharray="6 6"'));
+  me.classList.remove('rel');
+}
+new ResizeObserver(()=>mark()).observe($('#mapa'));
+$('#mapa').addEventListener('pointerover',e=>{ if(e.pointerType!=='mouse') return; const id=e.target.closest('.card')?.dataset.id||null; if(id!==hov){ hov=id; mark(); } });
+$('#mapa').addEventListener('pointerleave',()=>{ if(hov){ hov=null; mark(); } });
+
+/* ---- Notas ---- */
+function notasHTML(cur){
+  const e=E(); if(e.max>10) return `<div style="display:flex;gap:8px"><input id="nIn" type="number" min="${e.min}" max="${e.max}" placeholder="${e.min} a ${e.max}" value="${cur??''}"><button type="button" class="btn pri" data-nota="in">OK</button></div><button type="button" class="btn" data-nota="none">Sin nota</button>`;
+  let h=''; for(let i=e.min;i<=e.max;i++) h+=`<button type="button" data-nota="${i}" aria-pressed="${cur===i}">${i}</button>`;
+  return `<div class="notas">${h}<button type="button" class="sn" data-nota="none" aria-pressed="${cur==null}">Sin nota</button></div>`;
+}
+function leerNota(btn,scope){ const v=btn.dataset.nota; if(v==='none') return null; const e=E(); const x=v==='in'?Number(scope.querySelector('#nIn').value):Number(v);
+  if(!isFinite(x)||x<e.min||x>e.max){ toast(`La nota tiene que estar entre ${e.min} y ${e.max}`,false); return undefined; } return x; }
+
+/* ---- Selector rápido ---- */
+function openPick(id,btn){
+  const m=mat(id); if(!m) return; pickId=id;
+  $('#pick').innerHTML=`<h3>¡Bien! ¿Con qué nota aprobaste ${esc(m.n)}?</h3><p class="hint">Es opcional: si no querés, tocá "Sin nota".</p>${notasHTML(undefined).replace(/ aria-pressed="(true|false)"/g,'')}`+
+    (rec(id)?.e!=='c'?`<button type="button" class="btn" data-cur="1">${svg('cursando')} En realidad la estoy cursando</button>`:'');
+  const p=$('#pick'); p.classList.add('open');
+  const r=btn.getBoundingClientRect(), pw=p.offsetWidth, ph=p.offsetHeight;
+  p.style.left=Math.max(12,Math.min(innerWidth-pw-12,r.right-pw))+'px';
+  p.style.top=(r.bottom+8+ph>innerHeight?Math.max(12,r.top-ph-8):r.bottom+8)+'px';
+  p.querySelector('button')?.focus();
+}
+const closePick=()=>{ $('#pick').classList.remove('open'); pickId=null; };
+$('#pick').addEventListener('click',e=>{
+  const id=pickId; if(!id) return;
+  const nb=e.target.closest('[data-nota]'); if(nb){ const v=leerNota(nb,$('#pick')); if(v===undefined) return; closePick(); setEstado(id,'a',v,true); return; }
+  if(e.target.closest('[data-cur]')){ closePick(); setEstado(id,'c'); }
+});
+
+/* ---- Ficha ---- */
+function openFicha(id){
+  const m=mat(id); if(!m) return; closePick(); sel=id; mark();
+  const s=status(m), r=rec(id), deps=dependents(id);
+  const rq=m.r.map(x=>{const c=mat(x),ok=isAp(x);return `<button type="button" class="rq${ok?' ok':''}" data-open="${x}"><span class="st">${svg(ok?'aprobada':'bloqueada')}</span><span>${esc(c.n)}</span></button>`}).join('');
+  const hst=m.h?`<div class="rq${hastaOK(m)?' ok':''}" style="cursor:default"><span class="st">${svg(hastaOK(m)?'aprobada':'bloqueada')}</span><span>Todas las materias hasta el ${ORD(m.h)} semestre</span></div>`:'';
+  const dp=deps.map(d=>{const otras=d.r.filter(x=>x!==id).every(isAp)&&hastaOK(d);return `<button type="button" class="rq${isAp(d.id)?' ok':''}" data-open="${d.id}"><span class="st">${svg(isAp(d.id)?'aprobada':otras?'disponible':'bloqueada')}</span><span>${esc(d.n)}${!isAp(d.id)&&otras&&!isAp(id)?' <small class="hint">· se habilita al aprobar esta</small>':''}</span></button>`}).join('');
+  $('#ficha').innerHTML=`<div class="fhead"><div><p class="hint">${m.c?esc(m.c)+' · ':''}${SEMN[m.s]} semestre · ${ORD(Math.ceil(m.s/2))} año</p><h2>${esc(m.n)}</h2></div><button class="btn x" type="button" id="fClose" aria-label="Cerrar">×</button></div>
+    <div><p class="hint" style="font-weight:600;color:var(--ink);margin-bottom:8px">${LBL[s]}</p><div class="estado" role="group" aria-label="Estado">
+      <button type="button" data-e="" aria-pressed="${!r}">Sin cursar</button><button type="button" data-e="c" aria-pressed="${r?.e==='c'}">Cursando</button><button type="button" data-e="a" aria-pressed="${r?.e==='a'}">Aprobada</button></div></div>
+    ${r?.e==='a'?`<div class="box"><h3>Nota final (opcional)</h3>${notasHTML(r.n)}<p class="hint">${r.n!=null?'Suma a tu promedio.':'Sin nota: cuenta como aprobada, no entra en el promedio.'}</p></div>`:''}
+    <div class="box"><h3>Para rendir el final necesitás tener aprobada</h3>${rq||hst?rq+hst:`<p class="hint">${m.s===1?'Solo el CPI (curso de ingreso).':'No tiene correlativas.'}</p>`}</div>
+    <div class="box"><h3>${isAp(id)?'Esta materia es correlativa de':'Al aprobarla avanzás hacia'}</h3>${dp||'<p class="hint">Ninguna materia la pide como correlativa.</p>'}</div>`;
+  $('#veil').classList.add('on'); if(matchMedia('(max-width:1100px)').matches) document.documentElement.classList.add('lock'); const f=$('#ficha'); if(!f.classList.contains('open')){ f.classList.add('open'); f.setAttribute('aria-hidden','false'); setTimeout(()=>$('#fClose')?.focus({preventScroll:true}),60); }
+}
+$('#veil').addEventListener('click',()=>closeFicha());
+function closeFicha(){ $('#veil').classList.remove('on'); document.documentElement.classList.remove('lock'); const f=$('#ficha'); f.classList.remove('open'); f.setAttribute('aria-hidden','true'); sel=null; mark(); }
+$('#ficha').addEventListener('click',e=>{
+  if(e.target.closest('#fClose')) return closeFicha();
+  const id=sel; if(!id) return;
+  const eb=e.target.closest('[data-e]'); if(eb){ const v=eb.dataset.e||null; if((rec(id)?.e||null)===v) return; setEstado(id,v,undefined,v==='a'); openFicha(id); return; }
+  const nb=e.target.closest('[data-nota]'); if(nb){ const v=leerNota(nb,$('#ficha')); if(v===undefined) return; if(rec(id)?.n===v) return;
+    change(()=>{ av()[id].n=v; },v==null?`Quitaste la nota de ${mat(id).n}`:`Nota de ${mat(id).n}: ${v}`); openFicha(id); return; }
+  const o=e.target.closest('[data-open]'); if(o){ openFicha(o.dataset.open); document.querySelector(`.card[data-id="${CSS.escape(o.dataset.open)}"]`)?.scrollIntoView({block:'nearest',inline:'center'}); }
+});
+
+/* ---- Eventos generales ---- */
+document.addEventListener('click',e=>{
+  if($('#pick').classList.contains('open')&&!e.target.closest('#pick,[data-q]')) closePick();
+  if(e.target.closest('#ficha,#pick,#onb')) return;
+  const qb=e.target.closest('[data-q]'); if(qb){ openPick(qb.dataset.q,qb); return; }
+  const c=e.target.closest('.card'); if(c){ openFicha(c.dataset.id); return; }
+  const o=e.target.closest('[data-open]'); if(o){ openFicha(o.dataset.open); document.querySelector(`.card[data-id="${CSS.escape(o.dataset.open)}"]`)?.scrollIntoView({block:'nearest',inline:'center'}); return; }
+  const f=e.target.closest('[data-f]'); if(f){ filtro=f.dataset.f; render(); if(f.classList.contains('chip')) $('#filtros').scrollIntoView({block:'start',behavior:'smooth'}); return; }
+  const g=e.target.closest('[data-go]'); if(g){ const cur=parseInt(g.closest('.col').dataset.s)+parseInt(g.dataset.go); goSem(cur); return; }
+  const y=e.target.closest('[data-sem]'); if(y){ goSem(parseInt(y.dataset.sem)); }
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){ if($('#pick').classList.contains('open')) closePick(); else if($('#ficha').classList.contains('open')) closeFicha(); else if($('#onb').classList.contains('open')&&S.carrera) closeOnb(); }
+  if((e.key==='ArrowRight'||e.key==='ArrowLeft')&&S.carrera&&!e.target.closest('input,textarea,select,#ficha,#pick,#onb')&&!$('#ficha').classList.contains('open')){ e.preventDefault(); goSem(Math.min(Math.max(...malla().map(m=>m.s)),Math.max(1,curSem+(e.key==='ArrowRight'?1:-1)))); }
+  if((e.key==='Enter'||e.key===' ')&&e.target.classList?.contains('card')){ e.preventDefault(); openFicha(e.target.dataset.id); }
+});
+function goSem(n){ const c=$('#s'+n); if(!c) return; const w=$('#wrap'), pad=parseFloat(getComputedStyle(w).scrollPaddingInlineStart)||parseFloat(getComputedStyle(w).paddingLeft)||16;
+  const target=matchMedia('(min-width:701px) and (max-width:1100px)').matches?c.closest('.yg'):c;
+  w.scrollTo({left:target.offsetLeft,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}); setActive(n); }
+let curSem=1;
+function setActive(n){ const ch=n!==curSem; curSem=n; const ys=$('#years'); document.querySelectorAll('.yr').forEach(b=>{ const on=b.dataset.sem==String(n); b.classList.toggle('on',on); if(on&&ch){ const l=b.offsetLeft-ys.offsetLeft, r=l+b.offsetWidth; if(l<ys.scrollLeft+16||r>ys.scrollLeft+ys.clientWidth-16) ys.scrollTo({left:l-40,behavior:'smooth'}); } }); }
+let wT; $('#wrap').addEventListener('scroll',()=>{ cancelAnimationFrame(wT); wT=requestAnimationFrame(()=>{ const w=$('#wrap'), x=w.scrollLeft+24; let best=1;
+  document.querySelectorAll('.col').forEach(c=>{ if(c.offsetLeft<=x) best=parseInt(c.dataset.s); }); setActive(best); }); },{passive:true});
+let bT; $('#buscar').addEventListener('input',e=>{ clearTimeout(bT); bT=setTimeout(()=>{ q=e.target.value; render(); },150); });
+$('#cfEscala').innerHTML=Object.entries(ESC).map(([k,v])=>`<option value="${k}">${v.t}</option>`).join('');
+function syncCfg(){ $('#cfEscala').value=S.escala; }
+$('#cfEscala').addEventListener('change',e=>{ S.escala=e.target.value; persist(); render(); toast('Escala cambiada. Revisá que tus notas cargadas sigan teniendo sentido.',false); });
+$('#bk').addEventListener('toggle',e=>{ if(e.target.open) $('#bkTxt').value=JSON.stringify(S); });
+$('#bkCopy').addEventListener('click',()=>{ $('#bkTxt').value=JSON.stringify(S); navigator.clipboard.writeText($('#bkTxt').value).then(()=>toast('Copia de seguridad copiada',false),()=>{ $('#bkTxt').select(); toast('Seleccioné el texto: copialo con Ctrl+C',false); }); });
+$('#bkLoad').addEventListener('click',()=>{ let d; try{ d=JSON.parse($('#bkTxt').value) }catch(e){ return toast('Ese texto no es una copia válida',false) }
+  if(!d||typeof d.avance!=='object') return toast('Ese texto no es una copia válida',false);
+  const nd=norm(d); change(()=>{ S=nd; },'Restauraste tu copia'); applyTheme(); syncCfg(); render(); if(!S.carrera) openOnb(); });
+
+/* ---- Acceso y conexión ---- */
+let mode='local', started=false;
+function ready(){ loaded=true; applyTheme(); syncCfg(); render(); if(!S.carrera) openOnb(); else $('#onb').classList.remove('open'); }
+function local(msg){ try{ const d=localStorage.getItem(LS); if(d) S=norm(JSON.parse(d)); }catch(e){} setSync(msg); ready(); }
+const showLogin=()=>{ $('#login').classList.add('open'); document.querySelector('meta[name=theme-color]')?.setAttribute('content','#121521'); };
+const hideLogin=()=>{ $('#login').classList.remove('open'); applyTheme(); };
+const lgErr=t=>{ const e=$('#lgErr'); e.textContent=t; e.hidden=!t; };
+function setWho(t){ $('#who').textContent=t; $('#salir').hidden=false; }
+function subscribe(okMsg){
+  const timer=setTimeout(()=>{ if(!loaded) ready(); setSync('No se pudo conectar todavía; los datos pueden no estar al día'); },10000);
+  let first=true;
+  ref.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache){ clearTimeout(timer); if(!saving&&!dirty) setSync(snap.exists?okMsg:'Conectado ✓'); }
+    if(snap.exists&&!saving&&!dirty&&!snap.metadata.hasPendingWrites){ S=norm(snap.data()); applyTheme(); syncCfg(); if(sel&&!first) openFicha(sel); }
+    if(!snap.metadata.fromCache||snap.exists){ if(first){ first=false; ready(); } else render(); }
+  },err=>{ clearTimeout(timer); ref=null; if(first){ first=false; local('No se pudo conectar: los cambios se guardan solo en este navegador'); } else setSync('Se perdió la conexión con tu cuenta'); });
+}
+async function startClaude(){
+  if(started) return; started=true;
+  let db=null,user=null,uid=null;
+  try{ if(window.claude?.use){ [db,user]=await Promise.all([claude.use('db'),claude.use('user')]); uid=user?await user.id():null; } }catch(e){}
+  if(!db||!uid){ setWho('Sin cuenta: se guarda en este navegador'); return local(''); }
+  setWho('Con tu cuenta de Claude');
+  ref=db.doc('data/users/'+uid+'/progreso'); subscribe('Todo guardado en tu cuenta ✓');
+}
+async function cargar(){
+  const [p,g]=await Promise.all([
+    sb.from('perfiles').select('carrera_id,escala').eq('id',uid).maybeSingle(),
+    sb.from('progreso').select('materia_id,estado,nota,fecha').eq('user_id',uid)]);
+  if(p.error||g.error) throw (p.error||g.error);
+  const d={carrera:p.data?.carrera_id??null,escala:p.data?.escala??'5-2',avance:{}};
+  for(const r of g.data){ const k=CAR_DE[r.materia_id]; if(!k) continue;
+    (d.avance[k]??={})[r.materia_id]={e:r.estado==='aprobada'?'a':'c',n:r.nota==null?null:Number(r.nota),f:r.fecha||''}; }
+  const nd=norm(d);
+  return {d:nd,vacio:!p.data&&!g.data.length,
+    base:{perfil:p.data?{carrera:nd.carrera,escala:nd.escala}:{carrera:null,escala:null},filas:JSON.parse(JSON.stringify(filas(nd)))}};
+}
+async function entrar(session){
+  const u=session?.user; if(!u||started) return; started=true;
+  uid=u.id; hideLogin();
+  const nom=u.user_metadata?.full_name||u.user_metadata?.name||'';
+  setWho(nom?`Hola, ${nom.split(' ')[0]}`:(u.email||'Conectado'));
+  setSync('Cargando tu cuenta…');
+  try{
+    const r=await cargar(); base=r.base;
+    let loc=null; try{ const t=localStorage.getItem(LS); if(t) loc=norm(JSON.parse(t)); }catch(e){}
+    const tieneLocal=loc&&(loc.carrera||Object.keys(filas(loc)).length);
+    try{ localStorage.removeItem(LS); }catch(e){}
+    if(r.vacio&&tieneLocal){ S=loc; ready(); persist(); toast('Pasamos a tu cuenta lo que tenías marcado en este navegador',false); }
+    else { S=r.d; ready(); setSync('Todo guardado en tu cuenta de Google ✓'); }
+  }catch(e){ console.error(e); uid=null; base=null;
+    setSync('No se pudo cargar tu cuenta. Revisá tu conexión y recargá la página.'); ready(); }
+}
+async function signInGoogle(){
+  $('#gBtn').disabled=true; $('#gTxt').textContent='Abriendo Google…'; lgErr('');
+  const {error}=await sb.auth.signInWithOAuth({provider:'google',
+    options:{redirectTo:location.href.split('#')[0].split('?')[0],queryParams:{prompt:'select_account'}}});
+  if(error){ console.error(error); lgErr('No se pudo iniciar sesión. Probá de nuevo.'); $('#gBtn').disabled=false; $('#gTxt').textContent='Continuar con Google'; }
+}
+// Al volver a la pestaña, trae lo último (por si marcaste algo desde otro dispositivo)
+document.addEventListener('visibilitychange',async()=>{
+  if(document.visibilityState!=='visible'||!uid||saving||dirty) return;
+  try{ const r=await cargar(); if(saving||dirty||!uid) return; base=r.base; S=r.d; applyTheme(); syncCfg(); render(); if(sel) openFicha(sel); }catch(e){}
+});
+$('#gBtn').addEventListener('click',()=>{ if(mode==='supabase') return signInGoogle(); $('#lgAlt').hidden=false; $('#lgEnter').focus(); });
+$('#lgEnter').addEventListener('click',()=>{ try{ localStorage.setItem('corr-entrar','1'); }catch(e){} hideLogin(); startClaude(); });
+$('#salir').addEventListener('click',async()=>{
+  if(mode==='supabase'){
+    clearTimeout(sT); if(dirty&&!saving) await runSb();
+    for(let i=0;saving&&i<50;i++) await new Promise(r=>setTimeout(r,200));
+    try{ await sb.auth.signOut(); }catch(e){}
+    try{ localStorage.removeItem(LS); }catch(e){}
+  }
+  try{ localStorage.removeItem('corr-entrar'); }catch(e){}
+  location.reload();
+});
+(async()=>{
+  if(sb&&/^https?:$/.test(location.protocol)&&!window.claude){
+    mode='supabase';
+    sb.auth.onAuthStateChange((ev,session)=>{ if(session?.user) setTimeout(()=>entrar(session),0); });
+    try{ const {data:{session}}=await sb.auth.getSession(); if(session?.user) return entrar(session); }catch(e){ console.error(e); }
+    showLogin(); return;
+  }
+  mode=window.claude?.use?'claude':'local';
+  $('#lgEnter').textContent=mode==='claude'?'Entrar con mi cuenta de Claude':'Continuar sin cuenta (solo en este navegador)';
+  $('#lgAltTxt').textContent=mode==='claude'?'En esta versión de prueba el acceso con Google no está disponible (funciona en la versión publicada). Por ahora podés entrar con tu cuenta de Claude: tu avance se guarda igual.':'El acceso con Google no está disponible en esta copia (funciona en la versión publicada). Podés entrar sin cuenta: tu avance queda guardado solo en este navegador.';
+  let entered=false; try{ entered=localStorage.getItem('corr-entrar')==='1'; }catch(e){}
+  if(entered) startClaude(); else showLogin();
+})();
+applyTheme(); render();
+}
+</script>
+</body>
+</html>
