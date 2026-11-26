@@ -134,7 +134,7 @@ textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
 @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes draw{to{stroke-dashoffset:0}}
 @media(prefers-reduced-motion:reduce){.lg-art .nd,.lg-art .ln{animation:none;opacity:1;stroke-dashoffset:0}.gbtn{transition:none}}
-.who{font-size:14px;opacity:.9;margin-left:4px}
+.who{display:none}
 @media(max-width:760px){.lg{grid-template-columns:1fr;grid-template-rows:auto 1fr}.lg-art{order:-1;padding:max(20px,calc(env(safe-area-inset-top) + 12px)) 16px 16px;max-height:300px}.lg-art svg{max-height:260px;width:auto;max-width:100%}.lg-txt{padding:24px 20px calc(32px + env(safe-area-inset-bottom));justify-content:flex-start;gap:16px}.lg-lead{font-size:16px}.gbtn{align-self:stretch;justify-content:center;padding:0 22px 0 9px}}
 /* Bienvenida */
 #onb{position:fixed;inset:0;padding-top:max(24px,env(safe-area-inset-top))!important;z-index:40;background:var(--bg);overflow-y:auto;display:none;padding:clamp(24px,5vw,64px) max(5vw,16px)}
@@ -142,6 +142,7 @@ textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
 #onb .in{max-width:980px;margin:0 auto}
 #onb h1{font-size:clamp(32px,5vw,48px);margin-bottom:10px}
 #onb h2{font-size:22px;margin:30px 0 12px}
+.escnota{margin:22px 0 0;font-size:15px;color:var(--mut)}
 .cars{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:14px;margin-top:22px}
 .car{text-align:start;border:2px solid var(--line);background:var(--card);border-radius:20px;padding:20px 18px;cursor:pointer;display:grid;gap:10px;align-content:start;min-height:200px;transition:transform .18s;box-shadow:var(--sh)}
 
@@ -242,8 +243,7 @@ textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
 
 <section class="band foot">
   <details><summary>Configuración</summary><div>
-    <label>Escala de notas<select id="cfEscala"></select></label>
-    <p class="hint">La nota es opcional: si no la cargás, la materia cuenta como aprobada pero no entra en el promedio.</p>
+    <p class="hint">Las notas van del 1 al 5 y se aprueba con 2. La nota es opcional: si no la cargás, la materia cuenta como aprobada pero no entra en el promedio.</p>
     <button class="btn" type="button" id="cambiar2">Cambiar de carrera</button>
   </div></details>
   <details><summary>Sobre la malla</summary><div>
@@ -275,11 +275,10 @@ textarea{min-height:110px;font:14px/1.4 ui-monospace,monospace}
 </div></div>
 
 <div id="onb" role="dialog" aria-modal="true" aria-labelledby="onbT"><div class="in">
-  <h1 id="onbT">¡Hola! ¿Qué carrera estudiás?</h1>
+  <h1 id="onbT"><span id="onbHola">¡Hola!</span> ¿Qué carrera estudiás?</h1>
   <p class="hint" style="font-size:16px">Ya tenemos cargadas todas las materias y correlativas de tu carrera. Solo vas marcando lo que aprobaste. Si cambiás de carrera, lo de cada una queda guardado por separado.</p>
   <div class="cars" id="cars"></div>
-  <h2>¿Con qué escala te ponen las notas?</h2>
-  <div class="pills" id="escalas"></div>
+  <p class="escnota">Las notas van del 1 al 5 y se aprueba con 2.</p>
   <div class="acts" style="margin-top:28px"><button class="btn pri" id="empezar" type="button" style="min-height:52px;padding:0 26px;font-size:17px">Empezar</button><button class="btn" id="onbX" type="button" hidden>Volver</button></div>
   <p class="hint" id="onbErr" style="color:#c62828;margin-top:10px" hidden>Tocá tu carrera para seguir.</p>
 </div></div>
@@ -303,7 +302,7 @@ const CARR={alimentos:{n:'Ingeniería en Alimentos',t:'Ingeniería',d:5,ac:['#d9
   electronica:{n:'Ingeniería Electrónica',t:'Ingeniería',d:5,ac:['#1d5cf0','#7fa6ff'],ic:'elec'},
   ambiental:{n:'Ingeniería Ambiental',t:'Ingeniería',d:5,ac:['#13824a','#5fd394'],ic:'amb'},
   informatica:{n:'Licenciatura en Informática Empresarial',t:'Licenciatura',d:4,ac:['#c22a5f','#ff7ea8'],ic:'inf'}};
-const ESC={'5-2':{max:5,min:2,t:'1 a 5 · se aprueba con 2'},'10-4':{max:10,min:4,t:'1 a 10 · se aprueba con 4'},'10-6':{max:10,min:6,t:'1 a 10 · se aprueba con 6'},'100-60':{max:100,min:60,t:'1 a 100 · se aprueba con 60'}};
+const ESC={'5-2':{max:5,min:2,t:'1 a 5 · se aprueba con 2'}}; // en Paraguay las notas van del 1 al 5
 const LBL={aprobada:'Aprobada',rendir:'Cursando · podés rendir el final',cursando:'Cursando · te falta una correlativa',disponible:'Habilitada',bloqueada:'Te falta una correlativa'};
 const FIL=[['todas','Todas'],['hab','Habilitadas'],['cursando','Cursando'],['aprobada','Aprobadas'],['bloqueada','Bloqueadas']];
 const ORD=n=>n+(n===1||n===3?'.er':'.º');
@@ -416,7 +415,7 @@ let onbSel=null;
 function openOnb(){
   onbSel=S.carrera; $('#onbX').hidden=!S.carrera; $('#onbErr').hidden=true;
   $('#cars').innerHTML=Object.entries(CARR).map(([k,c])=>`<button type="button" class="car" data-car="${k}" style="--k:${c.ac[0]};--kk:${rgba(c.ac[0],.2)}" aria-pressed="${onbSel===k}"><span class="ic">${svg(c.ic)}</span><b>${c.n}</b><span>${c.t} · ${c.d} años · ${DATA.carreras[k].length} materias</span></button>`).join('');
-  $('#escalas').innerHTML=Object.entries(ESC).map(([k,v])=>`<label><input type="radio" name="esc" value="${k}"${S.escala===k?' checked':''}><span>${v.t}</span></label>`).join('');
+  holaNombre();
   $('#onb').classList.add('open'); $('#onb').scrollTop=0;
 }
 const closeOnb=()=>{ $('#onb').classList.remove('open'); applyTheme(); };
@@ -425,7 +424,7 @@ $('#cars').addEventListener('click',e=>{ const b=e.target.closest('[data-car]');
 $('#onbX').addEventListener('click',closeOnb);
 $('#empezar').addEventListener('click',()=>{
   if(!onbSel){ $('#onbErr').hidden=false; return; }
-  const nueva=onbSel!==S.carrera; S.carrera=onbSel; S.escala=document.querySelector('input[name=esc]:checked')?.value||S.escala; av();
+  const nueva=onbSel!==S.carrera; S.carrera=onbSel; S.escala='5-2'; av();
   persist(); closeOnb(); syncCfg(); sel=null; filtro='todas'; render();
   toast(nueva?`¡Listo! Ya tenés cargada la malla de ${car().n}. Tocá cada materia que aprobaste.`:'Preferencias guardadas',false);
 });
@@ -569,9 +568,10 @@ function setActive(n){ const ch=n!==curSem; curSem=n; const ys=$('#years'); docu
 let wT; $('#wrap').addEventListener('scroll',()=>{ cancelAnimationFrame(wT); wT=requestAnimationFrame(()=>{ const w=$('#wrap'), x=w.scrollLeft+24; let best=1;
   document.querySelectorAll('.col').forEach(c=>{ if(c.offsetLeft<=x) best=parseInt(c.dataset.s); }); setActive(best); }); },{passive:true});
 let bT; $('#buscar').addEventListener('input',e=>{ clearTimeout(bT); bT=setTimeout(()=>{ q=e.target.value; render(); },150); });
-$('#cfEscala').innerHTML=Object.entries(ESC).map(([k,v])=>`<option value="${k}">${v.t}</option>`).join('');
-function syncCfg(){ $('#cfEscala').value=S.escala; }
-$('#cfEscala').addEventListener('change',e=>{ S.escala=e.target.value; persist(); render(); toast('Escala cambiada. Revisá que tus notas cargadas sigan teniendo sentido.',false); });
+function syncCfg(){}
+// Saludo con el nombre de quien entró: se toma del texto que deja la parte de acceso ("Hola, Luis").
+function holaNombre(){ const m=($('#who').textContent||'').match(/^Hola, (.+)$/); $('#onbHola').textContent=m?`¡Hola ${m[1]}!`:'¡Hola!'; }
+new MutationObserver(holaNombre).observe($('#who'),{childList:true,characterData:true,subtree:true});
 $('#bk').addEventListener('toggle',e=>{ if(e.target.open) $('#bkTxt').value=JSON.stringify(S); });
 $('#bkCopy').addEventListener('click',()=>{ $('#bkTxt').value=JSON.stringify(S); navigator.clipboard.writeText($('#bkTxt').value).then(()=>toast('Copia de seguridad copiada',false),()=>{ $('#bkTxt').select(); toast('Seleccioné el texto: copialo con Ctrl+C',false); }); });
 $('#bkLoad').addEventListener('click',()=>{ let d; try{ d=JSON.parse($('#bkTxt').value) }catch(e){ return toast('Ese texto no es una copia válida',false) }
